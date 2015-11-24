@@ -21,7 +21,8 @@ void calcola(char* arr , char pos )
 // NB: mio e sec vengono distrutti
 char get_x(char* mio, char* sec)
 {
-    char i,r;
+    int i;
+    char r;
     r = 0;
     for( i=SIZE-1; i>=0; i--)
         if ( mio[i] == sec[i] ){
@@ -36,7 +37,8 @@ char get_x(char* mio, char* sec)
 // NB: mio e sec vengono distrutti
 char get_o(char* mio, char* sec)
 {
-    char i,j, r;
+    int i,j;
+    char r;
     r=0;
     for ( i =SIZE-1; i>=0; i--)
 	for ( j = SIZE-1; j>=0 && mio[i] != -1; j--)
