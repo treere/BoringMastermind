@@ -27,9 +27,10 @@ m_loop:
 	add $s3, $s0, $s1 # $s3 e' la posizione da lavorare
 	move $a0, $s3
 	
-	jal getPC
-	addi $ra, $v0, 8
-	jr $s2 
+#   jal getPC
+#  	addi $ra, $v0, 8
+#  	jr $s2 
+    jalr $s2
 
 	subu $s1, $s1, $s4
 	j m_loop
@@ -122,4 +123,3 @@ main:
 
 	lw $ra, ($sp)
 	jr $ra			
-	
