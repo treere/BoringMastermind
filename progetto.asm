@@ -8,7 +8,8 @@ O:	.byte 17
 COD:	.space 40000
 
 	.text
-map: # map ( array, valore , F(posizione in array), decremento ) 
+####  map ( array, valore , F(posizione in array), decremento ) ####
+map: 
 	subu $sp, $sp, 28
 	sw $s4, 24($sp)
 	sw $s3, 20($sp) 
@@ -26,12 +27,7 @@ m_loop:
 	bltz $s1, m_end
 	add $s3, $s0, $s1 # $s3 e' la posizione da lavorare
 	move $a0, $s3
-	
-#   jal getPC
-#  	addi $ra, $v0, 8
-#  	jr $s2 
     jalr $s2
-
 	subu $s1, $s1, $s4
 	j m_loop
 m_end:	
@@ -44,10 +40,8 @@ m_end:
 	lw $fp, 0($sp)
 	addi $sp, $sp, 28
 	jr $ra
-getPC:
-	move $v0, $ra
-	jr $ra
 
+#### read_input() #### salva l'input in X e O
 read_input:
 	### SALVATAGGIO ###
 	subu $sp, $sp, 12
@@ -85,17 +79,17 @@ ri_noo:
 	addi $sp, $sp, 12
 	jr $ra
 
+#### print intro() ####
 print_intro:	
 	subu $sp, $sp, 4
 	sw $fp, ($sp)
-	
 	li $v0, 4		
 	la $a0, INTRO		
 	syscall 		
-
 	lw $fp, ($sp)
 	addi $sp, $sp, 4
 
+#### take input() ####
 take_input:
 	subu $sp, $sp, 4
 	sw $fp, ($sp)
