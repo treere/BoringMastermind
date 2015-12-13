@@ -2,7 +2,7 @@
 INTRO:	.asciiz "Benvenuti nel noioso gioco del master mind al contrario\n"
 INS:	.asciiz "Inserire una stringa\n"
 GUESS:	.asciiz "Tentativo: "
-READ:	.asciiz "ooxxx"
+READ:	.asciiz "xxooo"
 	.align 1
 X:	.byte 17  #A 16 cosi' vedo 1111
 O:	.byte 17 
@@ -32,8 +32,13 @@ filter:
 	jr $ra
 
 compare_codes:
-	subu $sp, $sp, 4
+	subu $sp, $sp, 12
+	sw $s1, 8($sp)
+	sw $s0, 4($sp)
 	sw $fp, 0($sp)
+
+	li $s0, 0 # sono le X
+	li $s1, 0 # sono le O
 
 	# copio il codice per non distruggerlo
 	la $t0, TMP_C
@@ -44,9 +49,78 @@ compare_codes:
 	la $t0, TMP_P
 	lw $t1, ($t2)
 	sw $t1, ($t0)
+
+	la $t0, TMP_P
+	la $t1, TMP_C
+
+	# per la cifra 0
+	lb $t2, ($t0)
+	lb $t3, ($t1)
+	bne $t2, $t3, c_c_not_eq_0
+	#se i due codici sono uguali
+	li $t2, -1
+	li $t3, -1
+	sb $t2, ($t0)
+	sb $t3, ($t1)
+	addi $s0, 1
+c_c_not_eq_0:
+	addi $t0, 1
+	addi $t1, 1
 	
+	# per la cifra 1
+	lb $t2, ($t0)
+	lb $t3, ($t1)
+	bne $t2, $t3, c_c_not_eq_1
+	#se i due codici sono uguali
+	li $t2, -1
+	li $t3, -1
+	sb $t2, ($t0)
+	sb $t3, ($t1)
+	addi $s0, 1
+c_c_not_eq_1:
+	addi $t0, 1
+	addi $t1, 1
+	
+	# per la cifra 2
+	lb $t2, ($t0)
+	lb $t3, ($t1)
+	bne $t2, $t3, c_c_not_eq_2
+	#se i due codici sono uguali
+	li $t2, -1
+	li $t3, -1
+	sb $t2, ($t0)
+	sb $t3, ($t1)
+	addi $s0, 1
+c_c_not_eq_2:
+	addi $t0, 1
+	addi $t1, 1
+	
+	# per la cifra 3
+	lb $t2, ($t0)
+	lb $t3, ($t1)
+	bne $t2, $t3, c_c_not_eq_3
+	#se i due codici sono uguali
+	li $t2, -1
+	li $t3, -1
+	sb $t2, ($t0)
+	sb $t3, ($t1)
+	addi $s0, 1
+c_c_not_eq_3:
+	addi $t0, 1
+	addi $t1, 1
+
+	la $t0, X
+	lb $t0, ($t0)
+
+	beq $t0, $s0, c_c_esci
+	li $t1, -1
+	sw $t1, ($a0)
+
+c_c_esci:	
+	lw $s1, 8($sp)
+	lw $s0, 4($sp)
 	lw $fp, 0($sp)
-	add $sp, $sp, 4
+	add $sp, $sp, 12
 	jr $ra
 	
 ### crea le permutazioni chiamando la funzione map con la funzione permutation
@@ -252,6 +326,7 @@ main:
 	jal take_input
 	jal read_input
 	jal filter
+	jal guess
 error:
 win:	
 
