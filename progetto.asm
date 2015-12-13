@@ -2,13 +2,16 @@
 INTRO:	.asciiz "Benvenuti nel noioso gioco del master mind al contrario\n"
 INS:	.asciiz "Inserire una stringa\n"
 GUESS:	.asciiz "Tentativo: "
-READ:	.asciiz "xxooo"
+READ:	.asciiz "xxaao"
 	.align 1
 X:	.byte 17  #A 16 cosi' vedo 1111
 O:	.byte 17 
 PROP:	.space 4
 TMP_P:	.space 4
 TMP_C:	.space 4
+
+EMPTY:	.space 4 # spazio vuoto per vedere dove inizia il COD
+	
 COD:	.space 16384 # 8 * 8 * 8 * 8 * 4byte
 
 	.text
@@ -38,7 +41,6 @@ compare_codes:
 	sw $fp, 0($sp)
 
 	li $s0, 0 # sono le X
-	li $s1, 0 # sono le O
 
 	# copio il codice per non distruggerlo
 	la $t0, TMP_C
@@ -53,68 +55,34 @@ compare_codes:
 	la $t0, TMP_P
 	la $t1, TMP_C
 
-	# per la cifra 0
+	### inizio con il controllo sulle X
+	li $s1, 4
+cc_loop:
 	lb $t2, ($t0)
 	lb $t3, ($t1)
-	bne $t2, $t3, c_c_not_eq_0
-	#se i due codici sono uguali
+	bne $t2, $t3, c_c_not_eq
 	li $t2, -1
-	li $t3, -1
 	sb $t2, ($t0)
-	sb $t3, ($t1)
-	addi $s0, 1
-c_c_not_eq_0:
-	addi $t0, 1
-	addi $t1, 1
-	
-	# per la cifra 1
-	lb $t2, ($t0)
-	lb $t3, ($t1)
-	bne $t2, $t3, c_c_not_eq_1
-	#se i due codici sono uguali
-	li $t2, -1
-	li $t3, -1
 	sb $t2, ($t0)
-	sb $t3, ($t1)
 	addi $s0, 1
-c_c_not_eq_1:
-	addi $t0, 1
-	addi $t1, 1
-	
-	# per la cifra 2
-	lb $t2, ($t0)
-	lb $t3, ($t1)
-	bne $t2, $t3, c_c_not_eq_2
-	#se i due codici sono uguali
-	li $t2, -1
-	li $t3, -1
-	sb $t2, ($t0)
-	sb $t3, ($t1)
-	addi $s0, 1
-c_c_not_eq_2:
-	addi $t0, 1
-	addi $t1, 1
-	
-	# per la cifra 3
-	lb $t2, ($t0)
-	lb $t3, ($t1)
-	bne $t2, $t3, c_c_not_eq_3
-	#se i due codici sono uguali
-	li $t2, -1
-	li $t3, -1
-	sb $t2, ($t0)
-	sb $t3, ($t1)
-	addi $s0, 1
-c_c_not_eq_3:
-	addi $t0, 1
-	addi $t1, 1
+c_c_not_eq:
+	addi $t0,1
+	addi $t1,1
+	addi $s1, -1
+	bgtz $s1, cc_loop
 
 	la $t0, X
 	lb $t0, ($t0)
 
-	beq $t0, $s0, c_c_esci
+	beq $t0, $s0, c_c_controlla_O
 	li $t1, -1
 	sw $t1, ($a0)
+	j c_c_esci
+	### fine controllo sulle X
+	### inizio controllo sulle O
+c_c_controlla_O:	
+
+	li $s0, 0 # sono le O
 
 c_c_esci:	
 	lw $s1, 8($sp)
