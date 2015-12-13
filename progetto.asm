@@ -1,13 +1,54 @@
 	.data
 INTRO:	.asciiz "Benvenuti nel noioso gioco del master mind al contrario\n"
 INS:	.asciiz "Inserire una stringa\n"
+GUESS:	.asciiz "Tentativo: "
 READ:	.asciiz "ooxxx"
 	.align 1
 X:	.byte 17  #A 16 cosi' vedo 1111
 O:	.byte 17 
-COD:	.space 16384 # 8 * 8 * 8 * 8 * 4
+PROP:	.space 4
+TMP_P:	.space 4
+TMP_C:	.space 4
+COD:	.space 16384 # 8 * 8 * 8 * 8 * 4byte
 
 	.text
+
+### filtra l'array cod. chiama la funzione map ###
+filter:
+	subu $sp, $sp, 8
+	sw $ra, 4($sp)
+	sw $fp, 0($sp)
+
+	la $a0, COD
+	li $a1, 16380 
+	la $a2, compare_codes
+	li $a3, 4
+
+	jal map
+	
+	lw $fp, 0($sp)
+	lw $ra, 4($sp)
+	add $sp, $sp, 8
+	jr $ra
+
+compare_codes:
+	subu $sp, $sp, 4
+	sw $fp, 0($sp)
+
+	# copio il codice per non distruggerlo
+	la $t0, TMP_C
+	lw $t1, ($a0)
+	sw $t1, ($t0)
+	# copio il mio tentarivo per non distruggerlo
+	la $t2, PROP
+	la $t0, TMP_P
+	lw $t1, ($t2)
+	sw $t1, ($t0)
+	
+	lw $fp, 0($sp)
+	add $sp, $sp, 4
+	jr $ra
+	
 ### crea le permutazioni chiamando la funzione map con la funzione permutation
 create_permutations:
 	subu $sp, $sp , 8
@@ -141,6 +182,7 @@ print_intro:
 	syscall 		
 	lw $fp, ($sp)
 	addi $sp, $sp, 4
+	jr $ra
 
 #### take input() ####
 take_input:
@@ -154,22 +196,67 @@ take_input:
 	li $v0, 8		
 	la $a0, READ		
 	li $a1, 5		
-#	syscall		
+	#syscall		
 	
 	lw $fp, ($sp)
 	addi $sp, $sp, 4
 	jr $ra
 	
-main:
+guess:
 	subu $sp, $sp, 4
-	sw $ra, ($sp)
+	sw $fp, 0($sp)
 
-	jal create_permutations
+	la $t0, COD
+	li $t1, -1
+guess_loop:	
+	lb $t2, ($t0)
+	bne $t2, $t1, guess_trovato
+	addi $t0, 4
+	# TODO manca controllo che non si sia sforato il limite
+	j guess_loop
+guess_trovato:
+	li $v0, 4
+	la $a0, GUESS
+	syscall
+	# forse vanno stampati invertiti
+	la $t1, PROP
+	li $v0, 1		
+	lb $a0, 0($t0)
+	sb $a0, 0($t1)
+	syscall 		
+	lb $a0, 1($t0)		
+	sb $a0, 1($t1)
+	syscall 		
+	lb $a0, 2($t0)		
+	sb $a0, 2($t1)
+	syscall 		
+	lb $a0, 3($t0)		
+	sb $a0, 3($t1)
+	syscall 		
+	li $v0, 11
+	li $a0, '\n'
+	syscall
+
+	lw $fp, 0($sp)
+	add $sp, $sp, 4
+	jr $ra
 	
+main:
+	subu $sp, $sp, 8
+	sw $fp, 4($sp)
+	sw $ra, 0($sp)
+
 	jal print_intro
+	jal create_permutations
+	jal guess
 	jal take_input
 	jal read_input
+	jal filter
+error:
+win:	
 
-
-	lw $ra, ($sp)
+end:	
+	lw $ra, 0($sp)
+	lw $fp, 4($sp)
+	add $sp, $sp, 8
 	jr $ra			
