@@ -5,9 +5,62 @@ READ:	.asciiz "ooxxx"
 	.align 1
 X:	.byte 17  #A 16 cosi' vedo 1111
 O:	.byte 17 
-COD:	.space 40000
+COD:	.space 16384 # 8 * 8 * 8 * 8 * 4
 
 	.text
+### crea le permutazioni chiamando la funzione map con la funzione permutation
+create_permutations:
+	subu $sp, $sp , 8
+	sw $ra, 4($sp)
+	sw $fp, 0($sp)
+
+	la $a0, COD
+	li $a1, 16380 
+	la $a2, permutation
+	li $a3, 4
+
+	jal map
+	
+	lw $fp, 0($sp)
+	lw $ra, 4($sp)
+	add $sp, $sp, 8
+	jr $ra
+
+### genera permutazione nella posizione i
+### permutazione(posizione)
+permutation:
+	subu $sp, $sp, 8
+	sw $s1, 8($sp)
+	sw $s0, 4($sp)
+	sw $fp, 0($sp)
+
+	li $s0, 4
+	div $a0, $s0
+	mflo $s1
+	li $s0, 8
+	div $s1, $s0 # lo = divisione , hi = resto
+	mfhi $t0 # valore della prima posizione
+	mflo $t1
+	div $t1, $s0
+	mfhi $t1 # valore seconda posizione
+	mflo $t2
+	div $t2, $s0
+	mfhi $t2
+	mflo $t3
+	div $t3, $s0
+	mfhi $t3
+
+	sb $t0, 0($a0) 
+	sb $t1, 1($a0) 
+	sb $t2, 2($a0) 
+	sb $t3, 3($a0) 
+
+	lw $fp, 0($sp)
+	lw $s0, 4($sp)
+	lw $s1, 8($sp)
+	add $sp, $sp, 8
+	jr $ra
+
 ####  map ( array, valore , F(posizione in array), decremento ) ####
 map: 
 	subu $sp, $sp, 28
@@ -111,9 +164,12 @@ main:
 	subu $sp, $sp, 4
 	sw $ra, ($sp)
 
+	jal create_permutations
+	
 	jal print_intro
 	jal take_input
 	jal read_input
+
 
 	lw $ra, ($sp)
 	jr $ra			
