@@ -2,7 +2,7 @@
 INTRO:	.asciiz "Benvenuti nel noioso gioco del master mind al contrario\n"
 INS:	.asciiz "Inserire una stringa\n"
 GUESS:	.asciiz "Tentativo: "
-READ:	.asciiz "xxaao"
+READ:	.asciiz "ooooo"
 	.align 1
 X:	.byte 17  #A 16 cosi' vedo 1111
 O:	.byte 17 
@@ -35,7 +35,8 @@ filter:
 	jr $ra
 
 compare_codes:
-	subu $sp, $sp, 12
+	subu $sp, $sp, 16
+	sw $s2, 12($sp)
 	sw $s1, 8($sp)
 	sw $s0, 4($sp)
 	sw $fp, 0($sp)
@@ -56,8 +57,8 @@ compare_codes:
 	la $t1, TMP_C
 
 	### inizio con il controllo sulle X
-	li $s1, 4
-cc_loop:
+	li $s1, 4 # serve per il ciclo
+cc_loop_x:
 	lb $t2, ($t0)
 	lb $t3, ($t1)
 	bne $t2, $t3, c_c_not_eq
@@ -69,7 +70,7 @@ c_c_not_eq:
 	addi $t0,1
 	addi $t1,1
 	addi $s1, -1
-	bgtz $s1, cc_loop
+	bgtz $s1, cc_loop_x
 
 	la $t0, X
 	lb $t0, ($t0)
@@ -79,16 +80,48 @@ c_c_not_eq:
 	sw $t1, ($a0)
 	j c_c_esci
 	### fine controllo sulle X
+
 	### inizio controllo sulle O
 c_c_controlla_O:	
-
 	li $s0, 0 # sono le O
+	la $t0, TMP_C
+	li $s1, 4
+cc_loop_o:
+	lb $t2, ($t0)
+	li $t3, 0xff
+	beq $t3, $t2, cc_continue_o
+	la $t1, TMP_P
+	li $s2, 4
+cc_loop_oo:
+	lb $t3, ($t1)
+	bne $t2,$t3,cc_continue_oo
+	addi $s0,1
+	li $t3, -1
+	sb $t3, ($t1)
+	j cc_continue_o
+cc_continue_oo:	
+	addi $t1, 1
+	addi $s2, -1
+	bgtz $s2, cc_loop_oo
+cc_continue_o:	
+	addi $t0, 1
+	addi $s1, -1
+	bgtz $s1, cc_loop_o
 
+	la $t0, O
+	lb $t0, ($t0)
+
+	beq $t0, $s0, c_c_esci
+	li $t1, -1
+	sw $t1, ($a0)
+	j c_c_esci
+	### fine controllo sulle O
 c_c_esci:	
+	lw $s2, 12($sp)
 	lw $s1, 8($sp)
 	lw $s0, 4($sp)
 	lw $fp, 0($sp)
-	add $sp, $sp, 12
+	add $sp, $sp, 16
 	jr $ra
 	
 ### crea le permutazioni chiamando la funzione map con la funzione permutation
