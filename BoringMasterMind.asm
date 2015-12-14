@@ -37,7 +37,9 @@ filter:
 	jr $ra
 
 compare_codes:
-	subu $sp, $sp, 16
+	subu $sp, $sp, 24
+	# posizione 16 TMP_C
+	# posizione 20 TMP_P
 	sw $s2, 12($sp)
 	sw $s1, 8($sp)
 	sw $s0, 4($sp)
@@ -67,11 +69,11 @@ cc_loop_x:
 	li $t2, -1
 	sb $t2, ($t0)
 	sb $t2, ($t1)
-	addi $s0, 1
+	addi $s0, $s0, 1
 c_c_not_eq:
-	addi $t0,1
-	addi $t1,1
-	addi $s1, -1
+	addi $t0, $t0, 1
+	addi $t1, $t1, 1
+	addi $s1, $s1, -1
 	bgtz $s1, cc_loop_x
 
 	la $t0, X
@@ -97,17 +99,17 @@ cc_loop_o:
 cc_loop_oo:
 	lb $t3, ($t1)
 	bne $t2,$t3,cc_continue_oo
-	addi $s0,1
+	addi $s0, $s0, 1
 	li $t3, -1
 	sb $t3, ($t1)
 	j cc_continue_o
 cc_continue_oo:	
-	addi $t1, 1
-	addi $s2, -1
+	addi $t1, $t1, 1
+	addi $s2, $s2, -1
 	bgtz $s2, cc_loop_oo
 cc_continue_o:	
-	addi $t0, 1
-	addi $s1, -1
+	addi $t0, $t0, 1
+	addi $s1, $s1, -1
 	bgtz $s1, cc_loop_o
 
 	la $t0, O
@@ -123,7 +125,7 @@ c_c_esci:
 	lw $s1, 8($sp)
 	lw $s0, 4($sp)
 	lw $fp, 0($sp)
-	add $sp, $sp, 16
+	add $sp, $sp, 24
 	jr $ra
 	
 ### crea le permutazioni chiamando la funzione map con la funzione permutation
@@ -232,12 +234,12 @@ ri_loop:
 	lb $t1, ($t1)		
 	
 	bne $t1, $t2, ri_nox	# confronto on 'x'
-	addi $s0, 1		
+	addi $s0, $s0, 1		
 ri_nox:		
 	bne $t1, $t3, ri_noo	# confronto on 'o'
-	addi $s1, 1		
+	addi $s1, $s1, 1		
 ri_noo:		
-	addi $t0, -1		# diminuisco indice del ciclo
+	addi $t0, $t0, -1		# diminuisco indice del ciclo
 	bgez $t0, ri_loop	# controllo del ciclo
 
 	sb $s0, X		# salvo X e O
@@ -291,10 +293,10 @@ guess:
 guess_loop:	
 	lb $t2, ($t0)
 	bne $t2, $t1, guess_trovato
-	addi $t0, 4
+	addi $t0, $t0, 4
 	
 	la $t3, COD
-	addi $t3,16384
+	addi $t3, $t3, 16384
 	sub $t3, $t3, $t0
 	bgtz $t3, guess_loop
 	li $v0, 4
