@@ -1,6 +1,7 @@
 	.data
 INTRO:	.asciiz "Benvenuti nel noioso gioco del master mind al contrario\n"
 INS:	.asciiz "Inserire una stringa\n"
+ERRORE:	.asciiz "E' stata certamente inserita una risposta errata\n"
 GUESS:	.asciiz "Tentativo: "
 READ:	.asciiz "aaaao"
 	.align 1
@@ -272,7 +273,6 @@ take_input:
 	la $a0, READ		
 	li $a1, 5		
 	#syscall		
-	
 	lw $fp, ($sp)
 	addi $sp, $sp, 4
 	jr $ra
@@ -288,7 +288,14 @@ guess_loop:
 	bne $t2, $t1, guess_trovato
 	addi $t0, 4
 	# TODO manca controllo che non si sia sforato il limite
-	j guess_loop
+	li $t3, 16384
+	bne $t0, $3 guess_loop
+	li $v0, 4
+	la $a0, ERRORE
+	syscall
+	li $v0, 10
+	syscall
+
 guess_trovato:
 	li $v0, 4
 	la $a0, GUESS
