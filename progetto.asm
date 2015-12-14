@@ -66,7 +66,7 @@ cc_loop_x:
 	bne $t2, $t3, c_c_not_eq
 	li $t2, -1
 	sb $t2, ($t0)
-	sb $t2, ($t0)
+	sb $t2, ($t1)
 	addi $s0, 1
 c_c_not_eq:
 	addi $t0,1
@@ -78,7 +78,7 @@ c_c_not_eq:
 	lb $t0, ($t0)
 
 	beq $t0, $s0, c_c_controlla_O
-	li $t1, -1
+	li $t1, 0xff0000ff
 	sw $t1, ($a0)
 	j c_c_esci
 	### fine controllo sulle X
@@ -90,7 +90,7 @@ c_c_controlla_O:
 	li $s1, 4
 cc_loop_o:
 	lb $t2, ($t0)
-	li $t3, 0xff
+	li $t3, -1
 	beq $t3, $t2, cc_continue_o
 	la $t1, TMP_P
 	li $s2, 4
