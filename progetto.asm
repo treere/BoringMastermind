@@ -1,18 +1,19 @@
 	.data
+	.align 4
 INTRO:	.asciiz "Benvenuti nel noioso gioco del master mind al contrario\n"
 INS:	.asciiz "Inserire una stringa\n"
 ERRORE:	.asciiz "E' stata certamente inserita una risposta errata\n"
+VITT: 	.asciiz "E anche questa volta ti ho battuto\n"	
 GUESS:	.asciiz "Tentativo: "
 READ:	.asciiz "aaaao"
 	.align 1
 X:	.byte 17  #A 16 cosi' vedo 1111
 O:	.byte 17 
-PROP:	.space 4
+	.align 2
+PROP:	.word 0x01020304
 TMP_P:	.space 4
 TMP_C:	.space 4
-
 EMPTY:	.space 4 # spazio vuoto per vedere dove inizia il COD
-	
 COD:	.space 16384 # 8 * 8 * 8 * 8 * 4byte
 
 	.text
@@ -242,6 +243,10 @@ ri_noo:
 	sb $s0, X		# salvo X e O
 	sb $s1, O		
 
+	li $v0, 11
+	li $a0, '\n'
+	syscall
+
 	### RIPRISTINO STACK ###
 	lw $fp, 8($sp)
 	lw $s0, 4($sp)
@@ -272,7 +277,7 @@ take_input:
 	li $v0, 8		
 	la $a0, READ		
 	li $a1, 5		
-	#syscall		
+	syscall		
 	lw $fp, ($sp)
 	addi $sp, $sp, 4
 	jr $ra
@@ -287,9 +292,11 @@ guess_loop:
 	lb $t2, ($t0)
 	bne $t2, $t1, guess_trovato
 	addi $t0, 4
-	# TODO manca controllo che non si sia sforato il limite
-	li $t3, 16384
-	bne $t0, $3 guess_loop
+	
+	la $t3, COD
+	addi $t3,16384
+	sub $t3, $t3, $t0
+	bgtz $t3, guess_loop
 	li $v0, 4
 	la $a0, ERRORE
 	syscall
@@ -326,15 +333,21 @@ guess_trovato:
 main:
 	jal print_intro
 	jal create_permutations
-
-	
+main_loop:	
 	jal guess
 	jal take_input
 	jal read_input
+	la $t0, X
+	lb $t0, ($t0)
+	li $t1, 4
+	beq $t0, $t1, win
 	jal filter
+	j main_loop
 	
-error:
 win:	
+	li $v0, 4
+	la $a0, VITT
+	syscall
 
 end:	
 	li $v0, 10
