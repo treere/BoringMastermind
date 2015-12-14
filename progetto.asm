@@ -2,7 +2,7 @@
 INTRO:	.asciiz "Benvenuti nel noioso gioco del master mind al contrario\n"
 INS:	.asciiz "Inserire una stringa\n"
 GUESS:	.asciiz "Tentativo: "
-READ:	.asciiz "ooooo"
+READ:	.asciiz "aaaao"
 	.align 1
 X:	.byte 17  #A 16 cosi' vedo 1111
 O:	.byte 17 
@@ -317,22 +317,18 @@ guess_trovato:
 	jr $ra
 	
 main:
-	subu $sp, $sp, 8
-	sw $fp, 4($sp)
-	sw $ra, 0($sp)
-
 	jal print_intro
 	jal create_permutations
+
+	
 	jal guess
 	jal take_input
 	jal read_input
 	jal filter
-	jal guess
+	
 error:
 win:	
 
 end:	
-	lw $ra, 0($sp)
-	lw $fp, 4($sp)
-	add $sp, $sp, 8
-	jr $ra			
+	li $v0, 10
+	syscall
