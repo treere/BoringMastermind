@@ -123,7 +123,7 @@ c_c_esci:
 	lw $s1, 8($sp)
 	lw $s0, 4($sp)
 	lw $fp, 0($sp)
-	add $sp, $sp, 24
+	add $sp, $sp, 16
 	jr $ra
 	
 ### crea le permutazioni chiamando la funzione map con la funzione permutation
@@ -219,7 +219,8 @@ m_end:
 #### read_input() #### salva l'input in X e O
 # TODO fare che X e 0 siano valori di ritorno
 read_input:
-	subu $sp, $sp, 12
+	subu $sp, $sp, 16
+	sw $s2, 12($sp)
 	sw $fp, 8($sp)
 	sw $s0, 4($sp)
 	sw $s1, 0($sp)
@@ -229,12 +230,10 @@ read_input:
 	li $t0, 3		# devo fare 4 giri (3..0)
 	li $t2, 'x'		# t2 = 'x' per il confronto con il carattere
 	li $t3, 'o'		# t3 = 'o' per il confronto con il carattere
-
-# TODO READ lo salverei in s2 per evitare di leggerlo ogni volta
+    la $s2, READ    # s2 = &READ
 	
 ri_loop:				
-	la $t1, READ		# t1 = &READ[0] 
-	add $t1, $t1, $t0	# t1 = &READ[offset]
+	add $t1, $s2, $t0	# t1 = &READ[offset]
 	lb $t1, ($t1)		# t1 = READ[offset]
 	
 	bne $t1, $t2, ri_nox	# se t1 = 'x' incremento s0 (X)
@@ -249,6 +248,7 @@ ri_noo:
 	sb $s0, X		# salvo X
 	sb $s1, O		# salvo O
 
+	lw $s2, 12($sp)
 	lw $fp, 8($sp)
 	lw $s0, 4($sp)
 	lw $s1, 0($sp)
@@ -300,7 +300,6 @@ guess_loop:
 	addi $t0, $t0, 4			# incremento t0 per puntare alla posizione successiva di COD
 	
 	la $t3, COD			# t3 = &COD[0]
-# TODO controllare che sia 16384 e non 16380
 	addi $t3, $t3,16384			# t3 = &COD[0] + N_pos -> t3 sara l'ultima posizione dell'array
 	sub $t3, $t3, $t0		# t3 = ultima posizione - posizione corrente
 	bgtz $t3, guess_loop		# se sono ancora nel vettore continuo nella ricerva altrimenti errore
@@ -342,8 +341,7 @@ guess_trovato:
 	add $sp, $sp, 4
 	jr $ra
 
-winn:
-# TODO ho un BUG
+print_win:
 	subu $sp, $sp, 4
 	sw $fp, ($sp)
 	li $v0, 4		# syscall per stampa stringa
@@ -367,6 +365,6 @@ main_loop:
 	jal filter		# filtra i codici eliminando quelli che non possono essere soluzione
 	j main_loop		# salta a main loop per fare un nuovo tentativo
 win:	
-	jal winn 		# stampa il messaggio di vittoria
+	jal print_win 		# stampa il messaggio di vittoria
 	li $v0, 10		# carico la syscall di chiusura
 	syscall			# chiude il programma
