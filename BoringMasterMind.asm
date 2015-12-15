@@ -157,25 +157,16 @@ permutation:
 	mflo $s1		# s1 = salvo la posizione al byte
 	li $s0, 8		# s0 = 8
 	
-# TODO fare un ciclo
+    li $t1,0    # indice del ciclo
+p_loop:
 	div $s1, $s0 		# lo = divisione , hi = resto
 	mfhi $t0 		# t0 = resto ( e ci interessa per la posizione i-esima )
-	sb $t0, 0($a0)  	# salvo i calori calcolati nella posizione indicata
-	mflo $t1		# t1 = la parte restante su cui calcolare nuovamente il resto
-	
-	div $t1, $s0
-	mfhi $t1 		# valore seconda posizione
-	sb $t1, 1($a0) 
-	mflo $t2
-	
-	div $t2, $s0
-	mfhi $t2
-	sb $t2, 2($a0) 
-	mflo $t3
-
-	div $t3, $s0
-	mfhi $t3
-	sb $t3, 3($a0) 
+    add $t2, $a0, $t1
+	sb $t0, 0($t2)  	# salvo i calori calcolati nella posizione indicata
+	mflo $s1		# t1 = la parte restante su cui calcolare nuovamente il resto
+	li $t2, 4       # devo arrivare alla posizione 3
+    addi $t1, $t1, 1 # incremento del ciclo
+    bne $t1, $t2, p_loop
 
 	lw $fp, 0($sp)
 	lw $s0, 4($sp)
