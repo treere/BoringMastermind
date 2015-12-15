@@ -306,23 +306,19 @@ guess_trovato:
 	la $a0, GUESS			# stampo messaggio di spampa del tentativo
 	syscall
 
-# TODO usare un ciclo
 # TODO non PROP ma valore di ritorno
 
 	la $t1, PROP			# t1 = &PROP[0]. in PROP salvo il tentativo
+    lw $t2, ($t0)           # salvo il codice in PROP
+    sw $t2, ($t1) 
 	li $v0, 1			# syscall stampa numero
-	lb $a0, 0($t0)			# stampo la posizione i del codice
-	sb $a0, 0($t1)			# salvo la posizione i del codice
-	syscall 		
-	lb $a0, 1($t0)		
-	sb $a0, 1($t1)
-	syscall 		
-	lb $a0, 2($t0)		
-	sb $a0, 2($t1)
-	syscall 		
-	lb $a0, 3($t0)		
-	sb $a0, 3($t1)
-	syscall 		
+    li $t2, 3           # indice del ciclo
+guess_trv_loop:
+    add $t3, $t0, $t2       # calcolo la posizione nell'codice
+	lb $a0, 0($t3)			# stampo la posizione i del codice
+	syscall 
+    addi $t2, $t2, -1
+    bgez $t2, guess_trv_loop
 
 	li $v0, 11			# syscall stampa carattere
 	li $a0, '\n'			# stampo un acapo per chiarezza
