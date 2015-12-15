@@ -68,11 +68,11 @@ cc_loop_x:
 	li $t2, -1			# falore per annullare la posizione
 	sb $t2, ($t0)			# annullo la posizione su TMP_P
 	sb $t2, ($t1)			# annullo la posizione su TMP_C
-	addi $s0, 1			# incremento delle X trovate
+	addi $s0, $s0, 1		# incremento delle X trovate
 c_c_not_eq:
-	addi $t0,1			# prossima posizione di TMP_P
-	addi $t1,1			# prossima posizione di TMP_C
-	addi $s1, -1			# decremento del ciclo
+	addi $t0, $t0,1			# prossima posizione di TMP_P
+	addi $t1, $t1,1			# prossima posizione di TMP_C
+	addi $s1, $s1, -1			# decremento del ciclo
 	bgtz $s1, cc_loop_x 		# se devo ancora controllare posizioni continuo nel ciclo
 
 	la $t0, X			# t0 = X 
@@ -97,18 +97,18 @@ cc_loop_o:
 cc_loop_oo:
 	lb $t3, ($t1)			# carico la posizione i-esima di TMP_P
 	bne $t2,$t3,cc_continue_oo	# se TMP_C[i] != TMP_P[i] vado avanti alla prossima posizione di TMP_P
-	addi $s0,1			# altrimenti annullo la posizione
+	addi $s0,$s0,1			# altrimenti annullo la posizione
 	li $t3, -1
 	sb $t3, ($t1)
 	j cc_continue_o			# e vado alla prossima posizione di TMP_C
 cc_continue_oo:	
-	addi $t1, 1			# aumento posizione di TMP_P
-	addi $s2, -1			# decremento loop interno
+	addi $t1, $t1, 1			# aumento posizione di TMP_P
+	addi $s2, $s2, -1			# decremento loop interno
 	bgtz $s2, cc_loop_oo		# salto del loop interno
 cc_continue_o:	
-	addi $t0, 1			# vado alla prossima posizione di TMP_C
-	addi $s1, -1			# decremento loop
-	bgtz $s1, cc_loop_o		# salto del loop esterno
+	addi $t0, $t0, 1			# vado alla prossima posizione di TMP_C
+	addi $s1, $s1, -1			# decremento loop
+	bgtz $s1, cc_loop_o	    	# salto del loop esterno
 
 	la $t0, O			# prendo quante O erano state inserite dall'utente
 	lb $t0, ($t0)
@@ -123,7 +123,7 @@ c_c_esci:
 	lw $s1, 8($sp)
 	lw $s0, 4($sp)
 	lw $fp, 0($sp)
-	add $sp, $sp, 16
+	add $sp, $sp, 24
 	jr $ra
 	
 ### crea le permutazioni chiamando la funzione map con la funzione permutation
@@ -238,12 +238,12 @@ ri_loop:
 	lb $t1, ($t1)		# t1 = READ[offset]
 	
 	bne $t1, $t2, ri_nox	# se t1 = 'x' incremento s0 (X)
-	addi $s0, 1		
+	addi $s0, $s0, 1		
 ri_nox:		
 	bne $t1, $t3, ri_noo	# se t1 = 'o' incremento s1 (O)
-	addi $s1, 1		
+	addi $s1, $s1, 1		
 ri_noo:		
-	addi $t0, -1		# diminuisco indice del ciclo
+	addi $t0, $t0, -1		# diminuisco indice del ciclo
 	bgez $t0, ri_loop	# controllo del ciclo
 
 	sb $s0, X		# salvo X
@@ -297,11 +297,11 @@ guess:
 guess_loop:	
 	lb $t2, ($t0)			# t2 = COD[a]
 	bne $t2, $t1, guess_trovato    	# se t2 (COD[a]) != -1 e' un codice valido
-	addi $t0, 4			# incremento t0 per puntare alla posizione successiva di COD
+	addi $t0, $t0, 4			# incremento t0 per puntare alla posizione successiva di COD
 	
 	la $t3, COD			# t3 = &COD[0]
 # TODO controllare che sia 16384 e non 16380
-	addi $t3,16384			# t3 = &COD[0] + N_pos -> t3 sara l'ultima posizione dell'array
+	addi $t3, $t3,16384			# t3 = &COD[0] + N_pos -> t3 sara l'ultima posizione dell'array
 	sub $t3, $t3, $t0		# t3 = ultima posizione - posizione corrente
 	bgtz $t3, guess_loop		# se sono ancora nel vettore continuo nella ricerva altrimenti errore
 
