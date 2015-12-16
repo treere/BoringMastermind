@@ -185,13 +185,13 @@ map:
 	move $s0, $a0		# carico nei registri gli argomenti. Devo fare una chiamata a funzione
 	move $s1, $a1
 	move $s2, $a2
-	move $s4, $a3
+	move $s3, $a3
 m_loop:
 	bltz $s1, m_end		# se sono arrivato ad una posizione negativa esci, ho finito
-	add $s3, $s0, $s1 	# metto in s3 e' la posizione su cui lavorare
-	move $a0, $s3		# e la metto come argomento per la funzione da chiamare
+	add $s4, $s0, $s1 	# metto in s3 e' la posizione su cui lavorare
+	move $a0, $s4		# e la metto come argomento per la funzione da chiamare
 	jalr $s2		# chiamo la funzione
-	subu $s1, $s1, $s4	# decremento del ciclo
+	subu $s1, $s1, $s3	# decremento del ciclo
 	j m_loop		# ritorno al ciclo
 m_end:	
 	lw $s4, 24($sp)
