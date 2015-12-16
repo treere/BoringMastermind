@@ -11,8 +11,6 @@ X:	.byte 17  #A 16 cosi' vedo 1111
 O:	.byte 17 
 	.align 2
 PROP:	.word 0x01020304
-TMP_P:	.space 4
-TMP_C:	.space 4
 EMPTY:	.space 4 # spazio vuoto per vedere dove inizia il COD
 COD:	.space 16384 # 8 * 8 * 8 * 8 * 4byte
 
@@ -37,9 +35,10 @@ filter:
 	jr $ra
 
 compare_codes:
-# TODO usare stack invece delle variabili globali
 # TODO manca l'uscita automatica se non e' una combinazione valida
-	subu $sp, $sp, 16
+	subu $sp, $sp, 24
+    # 20 TMP_P
+    # 16 TMP_C
 	sw $s2, 12($sp)
 	sw $s1, 8($sp)
 	sw $s0, 4($sp)
@@ -47,17 +46,15 @@ compare_codes:
 
 	li $s0, 0 	# sono le X
 
-	la $t0, TMP_C   # faccio una copia della posizione dalla dell'array perchè devo lavorarci sopra
 	lw $t1, ($a0)	
-	sw $t1, ($t0)	# TMP_C = COD[i]
+	sw $t1, 16($sp)	# TMP_C = COD[i] : copio perche' devo lavorarci sopra
 	
 	la $t2, PROP	# faccio una copia della mia proposta di codice perche' devo lavorarci sopra
-	la $t0, TMP_P
 	lw $t1, ($t2)
-	sw $t1, ($t0)	# TMP_P = PROP
+	sw $t1, 20($sp)	# TMP_P = PROP
 
-	la $t0, TMP_P	# tengo in memoria la posizione di TMP_P
-	la $t1, TMP_C	# tengo in memoria la posizioen di TMP_C
+	la $t0, 20($sp) # tengo in memoria la posizione di TMP_P
+	la $t1, 16($sp) # tengo in memoria la posizioen di TMP_C
 
 	# controllo sulle X
 	li $s1, 4 			# devo fare 4 giri
@@ -86,13 +83,13 @@ c_c_not_eq:
 	#controllo sulle O
 c_c_controlla_O:	
 	li $s0, 0 	# sono le O
-	la $t0, TMP_C	# mi tengo in memoria la posizione di TMP_C
+	la $t0, 16($sp) # mi tengo in memoria la posizione di TMP_C
 	li $s1, 4	# devo fare 4 giri sul codice
 cc_loop_o:
 	lb $t2, ($t0)			# leggo la prima posizione del codice
 	li $t3, -1			
 	beq $t3, $t2, cc_continue_o	# se e' gia' stata annullata vado avanti alla prossima posizione
-	la $t1, TMP_P			# altrimenti carico la posizione di TMP_P
+	la $t1, 20($sp)			# altrimenti carico la posizione di TMP_P
 	li $s2, 4			# devo fare altri 4 giri sul TMP_P
 cc_loop_oo:
 	lb $t3, ($t1)			# carico la posizione i-esima di TMP_P
@@ -123,7 +120,7 @@ c_c_esci:
 	lw $s1, 8($sp)
 	lw $s0, 4($sp)
 	lw $fp, 0($sp)
-	add $sp, $sp, 16
+	add $sp, $sp, 24
 	jr $ra
 	
 ### crea le permutazioni chiamando la funzione map con la funzione permutation
