@@ -287,9 +287,9 @@ guess_loop:
 	addi $t0, $t0, 4			# incremento t0 per puntare alla posizione successiva di COD
 	
 	la $t3, COD			# t3 = &COD[0]
-	addi $t3, $t3,16384			# t3 = &COD[0] + N_pos -> t3 sara l'ultima posizione dell'array
+	addi $t3, $t3,16380			# t3 = &COD[0] + N_pos -> t3 sara l'ultima posizione dell'array
 	sub $t3, $t3, $t0		# t3 = ultima posizione - posizione corrente
-	bgtz $t3, guess_loop		# se sono ancora nel vettore continuo nella ricerva altrimenti errore
+	bgez $t3, guess_loop		# se sono ancora nel vettore continuo nella ricerva altrimenti errore
 
 	li $v0, 4			# syscall stampa stringa
 	la $a0, ERRORE			# stampa messaggio di errore
