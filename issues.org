@@ -1,2 +1,0 @@
-
-problema con la funzione che deve comparare i codici: usata nella map , ha bisogni di variabili globali, forse
