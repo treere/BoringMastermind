@@ -1,6 +1,5 @@
 	.data
-	.align 4
-INTRO:	.asciiz "Benvenuti nel noioso gioco del master mind al contrario\n"
+INTRO:	.asciiz " Benvenuti nel noioso gioco del master mind al contrario\n"
 INS:	.asciiz "Inserire una stringa\n"
 ERRORE:	.asciiz "E' stata certamente inserita una risposta errata\n"
 VITT: 	.asciiz "E anche questa volta ti ho battuto\n"	
@@ -11,7 +10,6 @@ COD:	.space 16384 # 8 * 8 * 8 * 8 * 4byte
 	.text
 
 ### filtra(PROP,X,O) l'array cod. chiama la funzione map,  ###
-# TODO manca passaggio argomenti a compare codes
 filter:
 	subu $sp, $sp, 20
 	sw $a2, 16($sp)		# salvo sullo stack i valori passati
@@ -34,7 +32,6 @@ filter:
 
 # compare_codes(INDEX, PROP, X , O)
 compare_codes:
-# TODO manca l'uscita automatica se non e' una combinazione valida
 	subu $sp, $sp, 24
 	# 20 TMP_P
 	# 16 TMP_C
@@ -43,9 +40,11 @@ compare_codes:
 	sw $s0, 4($sp)
 	sw $fp, 0($sp)
 
-	li $s0, 0 	# sono le X
-
 	lw $t1, ($a0)	
+	li $t0, -1
+	beq $t0, $t1, c_c_esci # se sono in un codice gia' eliminato finisco subito senza fare altro
+
+	li $s0, 0 	# sono le X
 	sw $t1, 16($sp)	# TMP_C = COD[i] : copio perche' devo lavorarci sopra
 	
 	sw $a1, 20($sp)	# sposto il codice proposto nello stack per lavorare sui byte
@@ -199,7 +198,6 @@ m_end:
 	jr $ra
 
 #### read_input(posizione dove leggere) #### salva l'input in X e O
-# TODO fare che X e 0 siano valori di ritorno
 read_input:
 	subu $sp, $sp, 16
 	sw $s2, 12($sp)
