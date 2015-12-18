@@ -5,40 +5,39 @@ INS:	.asciiz "Inserire una stringa\n"
 ERRORE:	.asciiz "E' stata certamente inserita una risposta errata\n"
 VITT: 	.asciiz "E anche questa volta ti ho battuto\n"	
 GUESS:	.asciiz "Tentativo: "
-READ:	.asciiz "aaaao"
-	.align 1
-X:	.byte 17  #A 16 cosi' vedo 1111
-O:	.byte 17 
 	.align 2
-PROP:	.word 0x01020304
-EMPTY:	.space 4 # spazio vuoto per vedere dove inizia il COD
 COD:	.space 16384 # 8 * 8 * 8 * 8 * 4byte
 
 	.text
 
-### filtra l'array cod. chiama la funzione map ###
+### filtra(PROP,X,O) l'array cod. chiama la funzione map,  ###
+# TODO manca passaggio argomenti a compare codes
 filter:
-	subu $sp, $sp, 8
+	subu $sp, $sp, 20
+	sw $a2, 16($sp)		# salvo sullo stack i valori passati
+	sw $a1, 12($sp)		# poiche' saranno passati alla map
+	sw $a0, 8($sp)		# sullo stack
 	sw $ra, 4($sp)
 	sw $fp, 0($sp)
 
 	la $a0, COD		# carico l'array da elaborare
 	li $a1, 16380 		# carico da dove partire
 	la $a2, compare_codes	# carico la funzione da usare
-	li $a3, 4		# carico l'incremento
+	la $a3, 8($sp)		# posizione dello stack con il primo argomento per la funzione
 
 	jal map			# faccio partire la map
 	
 	lw $fp, 0($sp)
 	lw $ra, 4($sp)
-	add $sp, $sp, 8
+	add $sp, $sp, 20
 	jr $ra
 
+# compare_codes(INDEX, PROP, X , O)
 compare_codes:
 # TODO manca l'uscita automatica se non e' una combinazione valida
 	subu $sp, $sp, 24
-    # 20 TMP_P
-    # 16 TMP_C
+	# 20 TMP_P
+	# 16 TMP_C
 	sw $s2, 12($sp)
 	sw $s1, 8($sp)
 	sw $s0, 4($sp)
@@ -49,9 +48,7 @@ compare_codes:
 	lw $t1, ($a0)	
 	sw $t1, 16($sp)	# TMP_C = COD[i] : copio perche' devo lavorarci sopra
 	
-	la $t2, PROP	# faccio una copia della mia proposta di codice perche' devo lavorarci sopra
-	lw $t1, ($t2)
-	sw $t1, 20($sp)	# TMP_P = PROP
+	sw $a1, 20($sp)	# sposto il codice proposto nello stack per lavorare sui byte
 
 	la $t0, 20($sp) # tengo in memoria la posizione di TMP_P
 	la $t1, 16($sp) # tengo in memoria la posizioen di TMP_C
@@ -72,10 +69,7 @@ c_c_not_eq:
 	addi $s1, $s1, -1			# decremento del ciclo
 	bgtz $s1, cc_loop_x 		# se devo ancora controllare posizioni continuo nel ciclo
 
-	la $t0, X			# t0 = X 
-	lb $t0, ($t0)
-
-	beq $t0, $s0, c_c_controlla_O	# se il numero di X calcolate e quelle date coindide controlle le O altrimenti 
+	beq $a2, $s0, c_c_controlla_O	# se il numero di X calcolate e quelle date coindide controlle le O altrimenti 
 	li $t1, 0xffffffff		# annullo il codice
 	sw $t1, ($a0)
 	j c_c_esci			# esco dalla funzione
@@ -107,10 +101,7 @@ cc_continue_o:
 	addi $s1, $s1, -1			# decremento loop
 	bgtz $s1, cc_loop_o	    	# salto del loop esterno
 
-	la $t0, O			# prendo quante O erano state inserite dall'utente
-	lb $t0, ($t0)
-
-	beq $t0, $s0, c_c_esci		# confronto il numero delle O, se concisono esco
+	beq $a3, $s0, c_c_esci		# confronto il numero delle O, se concisono esco
 	li $t1, -1			# se e' diverso distruggo il codice
 	sw $t1, ($a0)
 	j c_c_esci			# esci
@@ -125,20 +116,20 @@ c_c_esci:
 	
 ### crea le permutazioni chiamando la funzione map con la funzione permutation
 create_permutations:
-	subu $sp, $sp , 8
+	subu $sp, $sp , 20	# alloco piu' spazio per i tre argomenti che permutation non prende per evitare errori
 	sw $ra, 4($sp)
 	sw $fp, 0($sp)
 
 	la $a0, COD		# carico indirizzo array su cui lavorare
 	li $a1, 16380 		# carico il punto di partenza
 	la $a2, permutation	# carico la funzione da chiamare
-	li $a3, 4		# carico il decremento
+	la $a3, 8($sp)		# metto l'indirizzo dove dovrebbero esserci gli indirizzi
 
 	jal map			# faccio partire la map
 	
 	lw $fp, 0($sp)
 	lw $ra, 4($sp)
-	add $sp, $sp, 8
+	add $sp, $sp, 20
 	jr $ra
 
 ### genera permutazione nella posizione i
@@ -154,16 +145,16 @@ permutation:
 	mflo $s1		# s1 = salvo la posizione al byte
 	li $s0, 8		# s0 = 8
 	
-    li $t1,0    # indice del ciclo
+	li $t1,0    # indice del ciclo
 p_loop:
 	div $s1, $s0 		# lo = divisione , hi = resto
 	mfhi $t0 		# t0 = resto ( e ci interessa per la posizione i-esima )
-    add $t2, $a0, $t1
+	add $t2, $a0, $t1
 	sb $t0, 0($t2)  	# salvo i calori calcolati nella posizione indicata
 	mflo $s1		# t1 = la parte restante su cui calcolare nuovamente il resto
 	li $t2, 4       # devo arrivare alla posizione 3
-    addi $t1, $t1, 1 # incremento del ciclo
-    bne $t1, $t2, p_loop
+	addi $t1, $t1, 1 # incremento del ciclo
+	bne $t1, $t2, p_loop
 
 	lw $fp, 0($sp)
 	lw $s0, 4($sp)
@@ -171,7 +162,7 @@ p_loop:
 	add $sp, $sp, 8
 	jr $ra
 
-####  map ( array, posizione da cui partire  , F(posizione in array), decremento ) ####
+####  map ( array, posizione da cui partire  , F(posizione in array), luogo argomenti per F ) ####
 map: 
 	subu $sp, $sp, 28
 	sw $s4, 24($sp)
@@ -190,8 +181,11 @@ m_loop:
 	bltz $s1, m_end		# se sono arrivato ad una posizione negativa esci, ho finito
 	add $s4, $s0, $s1 	# metto in s3 e' la posizione su cui lavorare
 	move $a0, $s4		# e la metto come argomento per la funzione da chiamare
+	lw $a1, 0($s3)
+	lw $a2, 4($s3)
+	lw $a3, 8($s3)
 	jalr $s2		# chiamo la funzione
-	subu $s1, $s1, $s3	# decremento del ciclo
+	subu $s1, $s1, 4	# decremento del ciclo
 	j m_loop		# ritorno al ciclo
 m_end:	
 	lw $s4, 24($sp)
@@ -204,7 +198,7 @@ m_end:
 	addi $sp, $sp, 28
 	jr $ra
 
-#### read_input() #### salva l'input in X e O
+#### read_input(posizione dove leggere) #### salva l'input in X e O
 # TODO fare che X e 0 siano valori di ritorno
 read_input:
 	subu $sp, $sp, 16
@@ -218,7 +212,7 @@ read_input:
 	li $t0, 3		# devo fare 4 giri (3..0)
 	li $t2, 'x'		# t2 = 'x' per il confronto con il carattere
 	li $t3, 'o'		# t3 = 'o' per il confronto con il carattere
-    la $s2, READ    # s2 = &READ
+	move $s2, $a0    	# s2 = &READ
 	
 ri_loop:				
 	add $t1, $s2, $t0	# t1 = &READ[offset]
@@ -233,14 +227,14 @@ ri_noo:
 	addi $t0, $t0, -1		# diminuisco indice del ciclo
 	bgez $t0, ri_loop	# controllo del ciclo
 
-	sb $s0, X		# salvo X
-	sb $s1, O		# salvo O
+	move $v0, $s0		# ritorno le X
+	move $v1 $s1		# ritorno le O
 
 	lw $s2, 12($sp)
 	lw $fp, 8($sp)
 	lw $s0, 4($sp)
 	lw $s1, 0($sp)
-	addi $sp, $sp, 12
+	addi $sp, $sp, 16
 	jr $ra
 
 #### print intro() ####
@@ -256,15 +250,16 @@ print_intro:
 
 #### take input(): salva in variabile grobale READ ####
 take_input:
-	subu $sp, $sp, 4
-	sw $fp, ($sp)
+	subu $sp, $sp, 28
+	sw $ra, 4($sp)
+	sw $fp, 0($sp)
 
 	li $v0, 4		# syscall per stampa stringa
 	la $a0, INS		# stampa stringa per dire di inserire risposta
 	syscall			
 
 	li $v0, 8		# syscall per lettura stringa
-	la $a0, READ		# dove salvare la stringa
+	la $a0, 8($sp)		# dove salvare la stringa
 	li $a1, 5		# quanti carattere leggere
 	syscall		
 	
@@ -272,12 +267,18 @@ take_input:
 	li $a0, '\n'		# stampo un acapo
 	syscall
 
-	lw $fp, ($sp)
-	addi $sp, $sp, 4
+	la $a0, 8($sp)
+	jal read_input
+
+	lw $fp, 0($sp)
+	lw $ra, 4($sp)
+	addi $sp, $sp, 28
 	jr $ra
 	
+# guess() -> v0 = valore proposto. Usa COD
 guess:
-	subu $sp, $sp, 4
+	subu $sp, $sp, 8
+	# PROP = 4($sp)
 	sw $fp, 0($sp)
 
 	la $t0, COD			# t0 = &COD[0]
@@ -303,26 +304,25 @@ guess_trovato:
 	la $a0, GUESS			# stampo messaggio di spampa del tentativo
 	syscall
 
-# TODO non PROP ma valore di ritorno
-
-	la $t1, PROP			# t1 = &PROP[0]. in PROP salvo il tentativo
-    lw $t2, ($t0)           # salvo il codice in PROP
-    sw $t2, ($t1) 
+	la $t1, 4($sp)		# t1 = &PROP[0]. in PROP salvo il tentativo
+	lw $t2, ($t0)           # salvo il codice in PROP
+	sw $t2, ($t1) 
 	li $v0, 1			# syscall stampa numero
-    li $t2, 3           # indice del ciclo
+	li $t2, 3           # indice del ciclo
 guess_trv_loop:
-    add $t3, $t0, $t2       # calcolo la posizione nell'codice
+	add $t3, $t0, $t2       # calcolo la posizione nell'codice
 	lb $a0, 0($t3)			# stampo la posizione i del codice
 	syscall 
-    addi $t2, $t2, -1
-    bgez $t2, guess_trv_loop
+	addi $t2, $t2, -1
+	bgez $t2, guess_trv_loop
 
 	li $v0, 11			# syscall stampa carattere
 	li $a0, '\n'			# stampo un acapo per chiarezza
 	syscall
 
+	lw $v0, 4($sp)			# return del valore proposto
 	lw $fp, 0($sp)
-	add $sp, $sp, 4
+	addi $sp, $sp, 8
 	jr $ra
 
 print_win:
@@ -340,12 +340,16 @@ main:
 	jal create_permutations # crea tutti i possibili codici segreti
 main_loop:	
 	jal guess 		# propone un codice segreto
-	jal take_input		# legge l'input da tastiera
-	jal read_input		# capisce quante X e O si sono inserite
-	la $t0, X		# legge quante X ci sono
-	lb $t0, ($t0)		# e salva il valore in t0
+
+	move $s0,$v0		# salvo il codice proposto
+	jal take_input		# leggo l'input. ritorna X e O
+
 	li $t1, 4		# mette in t1 4 per il confronto
-	beq $t0, $t1, win	# confronta t1 e t0 ( X == 4 ) e se la risposta e' vera ho vinto
+	beq $v0, $t1, win	# confronta t1 e t0 ( X == 4 ) e se la risposta e' vera ho vinto
+
+	move $a0, $s0		# carico argomenti per filter
+	move $a1, $v0
+	move $a2, $v1
 	jal filter		# filtra i codici eliminando quelli che non possono essere soluzione
 	j main_loop		# salta a main loop per fare un nuovo tentativo
 win:	
