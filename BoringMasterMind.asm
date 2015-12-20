@@ -275,41 +275,52 @@ take_input:
 	
 # guess() -> v0 = valore proposto. Usa COD
 # TODO deve prendere un offset in input
-guess:
-	subu $sp, $sp, 8
-	# PROP = 4($sp)
+find_prop:
+	subu $sp, $sp, 4
 	sw $fp, 0($sp)
 
 	la $t0, COD			# t0 = &COD[0]
 	li $t1, -1			# t1 = -1 per vedere se i codici sono validi
 	li $t4, 16380
-guess_loop:	
+find_loop:	
 	add $t5, $t4, $t0
 	lb $t2, ($t5)			# t2 = COD[a]
-	bne $t2, $t1, guess_trovato    	# se t2 (COD[a]) != -1 e' un codice valido
+	bne $t2, $t1, find    	# se t2 (COD[a]) != -1 e' un codice valido
 	addi $t4, $t4, -4			# incremento t0 per puntare alla posizione successiva di COD
 	
-	bgez $t4, guess_loop		# se sono ancora nel vettore continuo nella ricerva altrimenti errore
+	bgez $t4, find_loop		# se sono ancora nel vettore continuo nella ricerca altrimenti errore
 
 	li $v0, 4			# syscall stampa stringa
 	la $a0, ERRORE			# stampa messaggio di errore
 	syscall
 	li $v0, 10			# uscita dal programma
 	syscall
+find:
+	lw $v0, ($t5)
+	lw $fp, 0($sp)
+	addi $sp, $sp, 4
+	jr $ra
 
-guess_trovato:
+guess:
+	subu $sp, $sp, 12
+	sw $ra, 8($sp)
+	# PROP = 4($sp)
+	sw $fp, 0($sp)
+
+	jal find_prop
+	move $t5, $v0
+
 	li $v0, 4 			# syscall stampa
 	la $a0, GUESS			# stampo messaggio di spampa del tentativo
 	syscall
-
-	la $t1, 4($sp)		# t1 = &PROP[0]. in PROP salvo il tentativo
-	lw $t2, ($t5)           # salvo il codice in PROP
-	sw $t2, ($t1) 
+	
 	li $v0, 1			# syscall stampa numero
+	la $t1, 4($sp)		# t1 = &PROP[0]. in PROP salvo il tentativo
+	sw $t5, ($t1) 
 	li $t2, 3           # indice del ciclo
 guess_trv_loop:
-	add $t3, $t5, $t2       # calcolo la posizione nell'codice
-	lb $a0, 0($t3)			# stampo la posizione i del codice
+	add $t3, $t1, $t2       # calcolo la posizione nell'codice
+	lb $a0, ($t3)			# stampo la posizione i del codice
 	syscall 
 	addi $t2, $t2, -1
 	bgez $t2, guess_trv_loop
@@ -318,9 +329,10 @@ guess_trv_loop:
 	li $a0, '\n'			# stampo un acapo per chiarezza
 	syscall
 
+	lw $ra, 8($sp)
 	lw $v0, 4($sp)			# return del valore proposto
 	lw $fp, 0($sp)
-	addi $sp, $sp, 8
+	addi $sp, $sp, 12
 	jr $ra
 
 print_win:
