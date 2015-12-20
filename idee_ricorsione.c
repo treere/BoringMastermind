@@ -13,15 +13,16 @@ int f(int n,int x)
 	return x;
     else
     {
-	return ( ( f(n-1,x) % p ) * ( ( p - f(n-1,x)  ) % p ) ) % p   ;
+	return (  f(n-1,x)  * ( p - f(n-1,x)) ) % p   ;
     }
 }
 
 int main()
 {
-    for ( int i = 1; i < 10 ; ++i )
+    for ( int i = 0; i < 1000 ; i++){
 	printf("%d ",f(5,i));
-    printf("\n");
+	printf("\n");
+    }
     
     return 0;
 }
