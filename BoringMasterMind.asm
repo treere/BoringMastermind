@@ -301,6 +301,7 @@ find:
 	addi $sp, $sp, 4
 	jr $ra
 
+# aggiungere funzione per stampa codice
 guess:
 	subu $sp, $sp, 12
 	sw $ra, 8($sp)
@@ -308,7 +309,7 @@ guess:
 	sw $fp, 0($sp)
 
 	jal find_prop
-	move $t5, $v0
+	move $t0, $v0
 
 	li $v0, 4 			# syscall stampa
 	la $a0, GUESS			# stampo messaggio di spampa del tentativo
@@ -316,7 +317,7 @@ guess:
 	
 	li $v0, 1			# syscall stampa numero
 	la $t1, 4($sp)		# t1 = &PROP[0]. in PROP salvo il tentativo
-	sw $t5, ($t1) 
+	sw $t0, ($t1) 
 	li $t2, 3           # indice del ciclo
 guess_trv_loop:
 	add $t3, $t1, $t2       # calcolo la posizione nell'codice
