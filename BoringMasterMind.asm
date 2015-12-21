@@ -1,5 +1,5 @@
 	.data
-INTRO:	.asciiz " Benvenuti nel noioso gioco del master mind al contrario\n"
+INTRO:	.asciiz "Benvenuti nel noioso gioco del master mind al contrario\n"
 INS:	.asciiz "Inserire una stringa\n"
 ERRORE:	.asciiz "E' stata certamente inserita una risposta errata\n"
 VITT: 	.asciiz "E anche questa volta ti ho battuto\n"	
@@ -8,8 +8,9 @@ GUESS:	.asciiz "Tentativo: "
 COD:	.space 16384 # 8 * 8 * 8 * 8 * 4byte
 
 	.text
+
+
 ### filtra(PROP,X,O) l'array cod. chiama la funzione map,  ###
-# TODO mettere argomenti prima di fp e cambiare anche la map
 filter:
 	subu $sp, $sp, 20
 	sw $a2, 16($sp)		# salvo sullo stack i valori passati
@@ -273,17 +274,67 @@ take_input:
 	addi $sp, $sp, 28
 	jr $ra
 	
+F:
+	subu $sp, $sp, 4
+	sw $fp, ($sp)
+	addi $t0, $a0, -8192
+	blez $t0, SX
+	li $t0, 16384
+	sub $a0, $t0, $a0
+SX:
+	li $t0, 2
+	mul $v0, $a0, $t0
+	lw $fp, ($sp)
+	addi $sp, $sp, 4
+	jr $ra
+	
+
+RIC:
+	subu $sp, $sp, 12
+	sw $fp, ($sp)
+	sw $ra, 4($sp)
+	sw $s0, 8($sp)
+	
+	bne $a0, $zero, R
+	move $a0, $a1
+	jal F
+	lw $fp, ($sp)
+	lw $ra, 4($sp)
+	lw $s0, 8($sp)
+	addi $sp, $sp, 12
+	jr $ra
+	
+R:	
+	addi $a0, $a0, -1
+	jal RIC
+	move $a0, $v0
+	jal F
+	lw $fp, ($sp)
+	lw $ra, 4($sp)
+	lw $s0, 8($sp)
+	addi $sp, $sp, 12
+	jr $ra
 # guess() -> v0 = valore proposto. Usa COD
 # TODO deve prendere un offset in input
 find_prop:
-	subu $sp, $sp, 4
+	subu $sp, $sp, 8
+	sw $ra, 4($sp)
 	sw $fp, 0($sp)
+
+	la $t0, COD
+	subu $a1, $a0, $t0
+	li $a0, 5
+	jal RIC
 
 	la $t0, COD			# t0 = &COD[0]
 	li $t1, -1			# t1 = -1 per vedere se i codici sono validi
 	li $t4, 16380
+	li $t7, 16384
 find_loop:	
-	add $t5, $t4, $t0
+	add $t6, $t4, $v0		# calcolo lo shift
+	div $t6, $t7
+	mfhi $t6
+	add $t5, $t6, $t0
 	lb $t2, ($t5)			# t2 = COD[a]
 	bne $t2, $t1, find    	# se t2 (COD[a]) != -1 e' un codice valido
 	addi $t4, $t4, -4			# incremento t0 per puntare alla posizione successiva di COD
@@ -297,10 +348,13 @@ find_loop:
 	syscall
 find:
 	lw $v0, ($t5)
+	move $v1, $t5
 	lw $fp, 0($sp)
-	addi $sp, $sp, 4
+	lw $ra, 4($sp)
+	addi $sp, $sp, 8
 	jr $ra
 
+# print_code(code) -> () : stampa il codice 
 print_code:
 	subu $sp, $sp, 8
 	sw $fp, 4($sp)
@@ -328,7 +382,6 @@ print_code:
 	addi $sp, $sp, 8
 	jr $ra
 
-# aggiungere funzione per stampa codice
 guess:
 	subu $sp, $sp, 12
 	sw $ra, 8($sp)
@@ -363,10 +416,13 @@ print_win:
 main:
 	jal print_intro 	# stampa le scritte iniziali
 	jal create_permutations # crea tutti i possibili codici segreti
+	la $s1,COD
 main_loop:	
+	move $a0, $s1
 	jal guess 		# propone un codice segreto
-
 	move $s0,$v0		# salvo il codice proposto
+	move $s1, $v1
+
 	jal take_input		# leggo l'input. ritorna X e O
 
 	li $t1, 4		# mette in t1 4 per il confronto
