@@ -8,27 +8,77 @@ GUESS:	.asciiz "Tentativo: "
 COD:	.space 16384 # 8 * 8 * 8 * 8 * 4byte
 
 	.text
+########################################################################
+#                                                                      #
+# map( array, pos, F, arg* )                                           #
+#                                                                      #
+# array = array su cui lavorare                                        #
+# pos = posizione da cui partire da cui scendere fino a zero           #
+# F(a1,a2,a3) = funzione da applicare ad ogni posizione dell'array     #
+# arg* = indirizzo di memoria in cui sono presenti i 3 argomenti per F #
+#                                                                      #
+########################################################################
 
-
-### filtra(PROP,X,O) l'array cod. chiama la funzione map,  ###
-filter:
-	subu $sp, $sp, 20
-	sw $a2, 16($sp)		# salvo sullo stack i valori passati
-	sw $a1, 12($sp)		# poiche' saranno passati alla map
-	sw $a0, 8($sp)		# sullo stack
+map: 
+	subu $sp, $sp, 24 	# alloco spazio sullo stack e salvo i registri che andro' a modificare
 	sw $ra, 4($sp)
 	sw $fp, 0($sp)
+	sw $s3, 20($sp) 
+	sw $s2, 16($sp)
+	sw $s1, 12($sp)
+	sw $s0, 8($sp) 
+
+	move $s0, $a0		# salvo gli argomenti passati
+	move $s1, $a1
+	move $s2, $a2
+	move $s3, $a3
+m_loop:
+	bltz $s1, m_end		# se sono in una posizione negativa esco. 
+	add $a0, $s0, $s1 	# a0 = COD& + offset
+	lw $a1, 0($s3)		# argomenti per F
+	lw $a2, 4($s3)
+	lw $a3, 8($s3)
+	jalr $s2		# chiamo F
+	subu $s1, $s1, 4	# decremento del ciclo
+	j m_loop		# ritorno al ciclo
+m_end:	
+	lw $s3, 20($sp)		# ripristino i registri
+	lw $s2, 16($sp)
+	lw $s1, 12($sp)
+	lw $s0, 8($sp)
+	lw $ra, 4($sp)
+	lw $fp, 0($sp)
+	addi $sp, $sp, 24	# ripristino lo stack
+	jr $ra			# return
+	
+#####################################################################
+#                                                                   #
+# filter ( codice_proposto, x , o ) -> ()                           #
+#                                                                   #
+# lavora sull'array COD e ne annulla le posizioni in cui il codice  #
+# presente, se fosse il codice segreto,                             #
+# non darebbe il risultato introdotto dall'utente.                  #
+#                                                                   #
+#####################################################################
+
+filter:
+	subu $sp, $sp, 20	# alloco spazio sullo stack e salvo i registri che andro' a modificare
+	sw $ra, 16($sp)		
+	sw $fp, 12($sp)		
+	sw $a2, 8($sp)		# salvo i parametri stack per la map
+	sw $a1, 4($sp)		
+	sw $a0, ($sp)		
 
 	la $a0, COD		# carico l'array da elaborare
 	li $a1, 16380 		# carico da dove partire
 	la $a2, compare_codes	# carico la funzione da usare
-	la $a3, 8($sp)		# posizione dello stack con il primo argomento per la funzione
+	la $a3, ($sp)		# posizione dello stack con il primo argomento per la funzione
 
-	jal map			# faccio partire la map
+	jal map			# chiamo map
 	
-	lw $fp, 0($sp)
-	lw $ra, 4($sp)
-	add $sp, $sp, 20
+	lw $fp, 12($sp)		# ripristino i registri 
+	lw $ra, 16($sp)
+	add $sp, $sp, 20	# ripristino lo stack
 	jr $ra
 
 # compare_codes(INDEX, PROP, X , O)
@@ -43,15 +93,15 @@ compare_codes:
 
 	lw $t1, ($a0)	
 	li $t0, -1
-	beq $t0, $t1, c_c_esci # se sono in un codice gia' eliminato finisco subito senza fare altro
+	beq $t0, $t1, c_c_esci		# se sono in un codice gia' eliminato finisco subito senza fare altro
 
-	li $s0, 0 	# sono le X
-	sw $t1, 16($sp)	# TMP_C = COD[i] : copio perche' devo lavorarci sopra
+	li $s0, 0 			# sono le X
+	sw $t1, 16($sp)			# TMP_C = COD[i] : copio perche' devo lavorarci sopra
 	
-	sw $a1, 20($sp)	# sposto il codice proposto nello stack per lavorare sui byte
+	sw $a1, 20($sp)			# sposto il codice proposto nello stack per lavorare sui byte
 
-	la $t0, 20($sp) # tengo in memoria la posizione di TMP_P
-	la $t1, 16($sp) # tengo in memoria la posizioen di TMP_C
+	la $t0, 20($sp) 		# tengo in memoria la posizione di TMP_P
+	la $t1, 16($sp) 		# tengo in memoria la posizioen di TMP_C
 
 	# controllo sulle X
 	li $s1, 4 			# devo fare 4 giri
@@ -113,144 +163,74 @@ c_c_esci:
 	lw $fp, 0($sp)
 	add $sp, $sp, 24
 	jr $ra
+
+#####################################################################
+#                                                                   #
+# create_permutation () -> ()                                       #
+#                                                                   #
+# lavora sull'array COD e modifica ogni posizione                   #
+# caricandoci il corrispondente codice segreto                      #
+#                                                                   #
+#####################################################################
 	
-### crea le permutazioni chiamando la funzione map con la funzione permutation
 create_permutations:
-	subu $sp, $sp , 20	# alloco piu' spazio per i tre argomenti che permutation non prende per evitare errori
+	subu $sp, $sp , 20	# alloco spazio sullo stack e salvo i registri che andro' a modificare
 	sw $ra, 4($sp)
 	sw $fp, 0($sp)
 
-	la $a0, COD		# carico indirizzo array su cui lavorare
-	li $a1, 16380 		# carico il punto di partenza
-	la $a2, permutation	# carico la funzione da chiamare
-	la $a3, 8($sp)		# metto l'indirizzo dove dovrebbero esserci gli indirizzi
+	la $a0, COD		# carico l'array da elaborare
+	li $a1, 16380 		# carico da dove partire 
+	la $a2, permutation	# carico la funzione da usare
+	la $a3, 8($sp)		# posizione dello stack con il primo argomento per la funzione
 
-	jal map			# faccio partire la map
+	jal map			# chiamo map
 	
-	lw $fp, 0($sp)
+	lw $fp, 0($sp)		# ripristino i registri
 	lw $ra, 4($sp)
-	add $sp, $sp, 20
-	jr $ra
+	add $sp, $sp, 20	# ripristino lo stack
+	jr $ra			# return
 
-### genera permutazione nella posizione i
-### permutazione(posizione)
+# permutation(index) -> ()
+# COD[INDEX] =
+#     I = INTEX / 4
+#     I >> 0 % 8 || I >> 8 % 8 || I >> 16 % 8 || I >> 24 % 8
+
 permutation:
-	subu $sp, $sp, 8
-	sw $s1, 8($sp)
-	sw $s0, 4($sp)
+	subu $sp, $sp, 4	# alloco spazio sullo stack e salvo i registri che andro' a modificare
 	sw $fp, 0($sp)
 
-	li $s0, 4		# s0 = 4
-	div $a0, $s0		# a0/4 eliminare i due 0 finali nella posizione
-	mflo $s1		# s1 = salvo la posizione al byte
-	li $s0, 8		# s0 = 8
-	
-	li $t1,0    # indice del ciclo
+	li $t3, 4		# t3 = 4
+	div $a0, $t3		
+	mflo $t4		# t4 = INDEX / 4, erano tutte posizioni multiple di 4 ( non di 8 )
+	li $t3, 8		# t3 = 8 per la division
+	li $t5, 4		# t5 = 4 per il controllo del ciclo
+
+	li $t1,0    		# indice del ciclo
 p_loop:
-	div $s1, $s0 		# lo = divisione , hi = resto
-	mfhi $t0 		# t0 = resto ( e ci interessa per la posizione i-esima )
-	add $t2, $a0, $t1
-	sb $t0, 0($t2)  	# salvo i calori calcolati nella posizione indicata
-	mflo $s1		# t1 = la parte restante su cui calcolare nuovamente il resto
-	li $t2, 4       # devo arrivare alla posizione 3
-	addi $t1, $t1, 1 # incremento del ciclo
-	bne $t1, $t2, p_loop
+	div $t4, $t3 		# lo = divisione , hi = resto
+	mfhi $t0 		# t0 = t4 % 8
+	add $t2, $a0, $t1	# t2 = &COD[INDEX][POS] carico indirizzo dove salvare il resto
+	sb $t0, ($t2)	  	# t2 = t0		salvo il resto
+	mflo $t4		# t4 = t4 / 8
+	addi $t1, $t1, 1 	# t1++
+	bne $t1, $t5, p_loop	# se t1 != t5 loop
 
-	lw $fp, 0($sp)
-	lw $s0, 4($sp)
-	lw $s1, 8($sp)
-	add $sp, $sp, 8
-	jr $ra
+	lw $fp, 0($sp)		# ripristino i registri
+	addi $sp, $sp, 4	# ripristino lo stack
+	jr $ra			# return
 
-####  map ( array, posizione da cui partire  , F(posizione in array), luogo argomenti per F ) ####
-map: 
-	subu $sp, $sp, 28
-	sw $s4, 24($sp)
-	sw $s3, 20($sp) 
-	sw $s2, 16($sp)
-	sw $s1, 12($sp)
-	sw $s0, 8($sp) 
-	sw $ra, 4($sp)
-	sw $fp, 0($sp)
+###################################################
+#                                                 #
+# take_input () -> v0 = X , v1 = O                #
+#                                                 #
+# legge l'input da tastiera e restutuisce         #
+# quante X e quante O erano contenute nel codice  #
+#                                                 #
+###################################################
 
-	move $s0, $a0		# carico nei registri gli argomenti. Devo fare una chiamata a funzione
-	move $s1, $a1
-	move $s2, $a2
-	move $s3, $a3
-m_loop:
-	bltz $s1, m_end		# se sono arrivato ad una posizione negativa esci, ho finito
-	add $s4, $s0, $s1 	# metto in s3 e' la posizione su cui lavorare
-	move $a0, $s4		# e la metto come argomento per la funzione da chiamare
-	lw $a1, 0($s3)
-	lw $a2, 4($s3)
-	lw $a3, 8($s3)
-	jalr $s2		# chiamo la funzione
-	subu $s1, $s1, 4	# decremento del ciclo
-	j m_loop		# ritorno al ciclo
-m_end:	
-	lw $s4, 24($sp)
-	lw $s3, 20($sp)
-	lw $s2, 16($sp)
-	lw $s1, 12($sp)
-	lw $s0, 8($sp)
-	lw $ra, 4($sp)
-	lw $fp, 0($sp)
-	addi $sp, $sp, 28
-	jr $ra
-
-#### read_input(posizione dove leggere) #### salva l'input in X e O
-read_input:
-	subu $sp, $sp, 16
-	sw $s2, 12($sp)
-	sw $fp, 8($sp)
-	sw $s0, 4($sp)
-	sw $s1, 0($sp)
-	
-	li $s0, 0		# s0 sara' la X	
-	li $s1, 0		# s1 sara' la O
-	li $t0, 3		# devo fare 4 giri (3..0)
-	li $t2, 'x'		# t2 = 'x' per il confronto con il carattere
-	li $t3, 'o'		# t3 = 'o' per il confronto con il carattere
-	move $s2, $a0    	# s2 = &READ
-	
-ri_loop:				
-	add $t1, $s2, $t0	# t1 = &READ[offset]
-	lb $t1, ($t1)		# t1 = READ[offset]
-	
-	bne $t1, $t2, ri_nox	# se t1 = 'x' incremento s0 (X)
-	addi $s0, $s0, 1		
-ri_nox:		
-	bne $t1, $t3, ri_noo	# se t1 = 'o' incremento s1 (O)
-	addi $s1, $s1, 1		
-ri_noo:		
-	addi $t0, $t0, -1		# diminuisco indice del ciclo
-	bgez $t0, ri_loop	# controllo del ciclo
-
-	move $v0, $s0		# ritorno le X
-	move $v1 $s1		# ritorno le O
-
-	lw $s2, 12($sp)
-	lw $fp, 8($sp)
-	lw $s0, 4($sp)
-	lw $s1, 0($sp)
-	addi $sp, $sp, 16
-	jr $ra
-
-#### print intro() ####
-print_intro:	
-	subu $sp, $sp, 4
-	sw $fp, ($sp)
-	li $v0, 4		# syscall per stampa stringa
-	la $a0, INTRO		# spama stringa di introduzione
-	syscall 		
-	lw $fp, ($sp)
-	addi $sp, $sp, 4
-	jr $ra
-
-#### take input(): salva in variabile grobale READ ####
 take_input:
-	subu $sp, $sp, 28
-	sw $ra, 4($sp)
+	subu $sp, $sp, 28 	# alloco spazio sullo stack e salvo i registri che andro' a modificare
+	sw $ra, 4($sp)		# salvo i registri
 	sw $fp, 0($sp)
 
 	li $v0, 4		# syscall per stampa stringa
@@ -258,22 +238,131 @@ take_input:
 	syscall			
 
 	li $v0, 8		# syscall per lettura stringa
-	la $a0, 8($sp)		# dove salvare la stringa
-	li $a1, 5		# quanti carattere leggere
+	la $a0, 8($sp)		# salvo la stringa sullo stack
+	li $a1, 5		# leggendo 5 caratteri ( un e' \0 )
 	syscall		
 	
 	li $v0, 11		# syscall per stampa di un carattere
 	li $a0, '\n'		# stampo un acapo
 	syscall
 
-	la $a0, 8($sp)
-	jal read_input
+	la $a0, 8($sp)		# carico come argomento i'indirizzo di quanto letto
+	jal read_input		# chiamo la funzione read_input
 
+	lw $fp, 0($sp)		# ripristino i registri
+	lw $ra, 4($sp)		
+	addi $sp, $sp, 28	# rispristino lo stack
+	jr $ra			# return , v0 e v1 sono stati impostati da read_input
+	
+# read_input(pos_stringa_letta) -> numero_X numero_O
+read_input:
+	subu $sp, $sp, 4	# sposto testa stack e salvo i registri
+	sw $fp, ($sp)
+	
+	li $t5, 0		# t5 rappresenta le X	
+	li $t6, 0		# t6 rappresenta le O
+	li $t0, 3		# devo fare 4 giri (3..0)
+	li $t2, 'x'		# t2 = 'x' per il confronto con il carattere
+	li $t3, 'o'		# t3 = 'o' per il confronto con il carattere
+	move $t4, $a0    	# t4 = &READ
+	
+ri_loop:				
+	add $t1, $t4, $t0	# t1 = &READ[offset]
+	lb $t1, ($t1)		# t1 = READ[offset]
+	
+	bne $t1, $t2, ri_nox	# se t1 = 'x' incremento s0 (X)
+	addi $t5, $t5, 1
+	j ri_noo	        # salto alla fine del ciclo
+ri_nox:		
+	bne $t1, $t3, ri_noo	# se t1 = 'o' incremento s1 (O)
+	addi $t6, $t6, 1		
+ri_noo:		
+	addi $t0, $t0, -1	# diminuisco indice del ciclo
+	bgez $t0, ri_loop	# controllo del ciclo
+
+	move $v0, $t5		# ritorno X
+	move $v1 $t6		# ritorno O
+
+	lw $fp, ($sp)		# rispristino registri
+	addi $sp, $sp, 4	# rispristino testa stack
+	jr $ra			# return
+
+############################################################
+#                                                          #
+# guess ( posizione_codice_usato ) -> nuovo_tentativo      #
+#                                                          #
+# L'ultimo tentativo fatto serve per generare              #
+# della casualità della scelta della stringa da sottoporre #
+#                                                          #
+############################################################
+	
+guess:
+	subu $sp, $sp, 16	# sposto la testa dello stack e salvo i registri che saranno modificati
+	sw $ra, 8($sp)
+	sw $s0, 4($sp)
+	sw $fp, 0($sp)
+	sw $s1, 12($sp)
+
+	jal find_prop		# cerco il nuovo codice da proporre
+	move $s0, $v0		# salvo i valori di return
+	move $s1, $v1
+	
+	move $a0, $s0		
+	jal print_code		# stampo il codice trovato
+
+	move $v0, $s0		# return del codice trovato
+	move $v1, $s1
+
+	lw $s1, 12($sp)
+	lw $ra, 8($sp)		# ripristino i registri
+	lw $s0, 4($sp)	
+	lw $fp, 0($sp)
+	addi $sp, $sp, 16	# ripristino lo stack
+	jr $ra			# return 
+
+# guess(posizione_codice_precedente ) ->
+#		v0 = codice proposto
+# 		v1 = indice del codice proposto
+#
+# Lavora su COD per trovare il codice 
+find_prop:
+	subu $sp, $sp, 8
+	sw $ra, 4($sp)
+	sw $fp, 0($sp)
+
+	la $t0, COD
+	subu $a1, $a0, $t0
+	li $a0, 5
+	jal RIC
+
+	la $t0, COD			# t0 = &COD[0]
+	li $t1, -1			# t1 = -1 per vedere se i codici sono validi
+	li $t4, 16380
+	li $t7, 16384
+find_loop:	
+	add $t6, $t4, $v0		# calcolo lo shift
+	div $t6, $t7
+	mfhi $t6
+	add $t5, $t6, $t0
+	lb $t2, ($t5)			# t2 = COD[a]
+	bne $t2, $t1, find    	# se t2 (COD[a]) != -1 e' un codice valido
+	addi $t4, $t4, -4			# incremento t0 per puntare alla posizione successiva di COD
+	
+	bgez $t4, find_loop		# se sono ancora nel vettore continuo nella ricerca altrimenti errore
+
+	li $v0, 4			# syscall stampa stringa
+	la $a0, ERRORE			# stampa messaggio di errore
+	syscall
+	li $v0, 10			# uscita dal programma
+	syscall
+find:
+	lw $v0, ($t5)
+	move $v1, $t5
 	lw $fp, 0($sp)
 	lw $ra, 4($sp)
-	addi $sp, $sp, 28
+	addi $sp, $sp, 8
 	jr $ra
-	
+
 F:
 	subu $sp, $sp, 4
 	sw $fp, ($sp)
@@ -314,45 +403,8 @@ R:
 	lw $s0, 8($sp)
 	addi $sp, $sp, 12
 	jr $ra
-# guess() -> v0 = valore proposto. Usa COD
-# TODO deve prendere un offset in input
-find_prop:
-	subu $sp, $sp, 8
-	sw $ra, 4($sp)
-	sw $fp, 0($sp)
 
-	la $t0, COD
-	subu $a1, $a0, $t0
-	li $a0, 5
-	jal RIC
 
-	la $t0, COD			# t0 = &COD[0]
-	li $t1, -1			# t1 = -1 per vedere se i codici sono validi
-	li $t4, 16380
-	li $t7, 16384
-find_loop:	
-	add $t6, $t4, $v0		# calcolo lo shift
-	div $t6, $t7
-	mfhi $t6
-	add $t5, $t6, $t0
-	lb $t2, ($t5)			# t2 = COD[a]
-	bne $t2, $t1, find    	# se t2 (COD[a]) != -1 e' un codice valido
-	addi $t4, $t4, -4			# incremento t0 per puntare alla posizione successiva di COD
-	
-	bgez $t4, find_loop		# se sono ancora nel vettore continuo nella ricerca altrimenti errore
-
-	li $v0, 4			# syscall stampa stringa
-	la $a0, ERRORE			# stampa messaggio di errore
-	syscall
-	li $v0, 10			# uscita dal programma
-	syscall
-find:
-	lw $v0, ($t5)
-	move $v1, $t5
-	lw $fp, 0($sp)
-	lw $ra, 4($sp)
-	addi $sp, $sp, 8
-	jr $ra
 
 # print_code(code) -> () : stampa il codice 
 print_code:
@@ -382,26 +434,18 @@ print_code:
 	addi $sp, $sp, 8
 	jr $ra
 
-guess:
-	subu $sp, $sp, 12
-	sw $ra, 8($sp)
-	sw $s0, 4($sp)
-	sw $fp, 0($sp)
 
-	jal find_prop
-	move $s0, $v0
 
-	move $a0, $s0
-	jal print_code
 
-	move $v0, $s0
-
-	lw $ra, 8($sp)
-	lw $s0, 4($sp)			# return del valore proposto
-	lw $fp, 0($sp)
-	addi $sp, $sp, 12
+print_intro:	
+	subu $sp, $sp, 4
+	sw $fp, ($sp)
+	li $v0, 4		# syscall per stampa stringa
+	la $a0, INTRO		# spama stringa di introduzione
+	syscall 		
+	lw $fp, ($sp)
+	addi $sp, $sp, 4
 	jr $ra
-
 
 print_win:
 	subu $sp, $sp, 4
@@ -413,6 +457,14 @@ print_win:
 	addi $sp, $sp, 4
 	jr $ra
 
+	
+
+
+
+
+
+
+	
 main:
 	jal print_intro 	# stampa le scritte iniziali
 	jal create_permutations # crea tutti i possibili codici segreti
