@@ -8,8 +8,8 @@ GUESS:	.asciiz "Tentativo: "
 COD:	.space 16384 # 8 * 8 * 8 * 8 * 4byte
 
 	.text
-
 ### filtra(PROP,X,O) l'array cod. chiama la funzione map,  ###
+# TODO mettere argomenti prima di fp e cambiare anche la map
 filter:
 	subu $sp, $sp, 20
 	sw $a2, 16($sp)		# salvo sullo stack i valori passati
@@ -301,40 +301,54 @@ find:
 	addi $sp, $sp, 4
 	jr $ra
 
-# aggiungere funzione per stampa codice
-guess:
-	subu $sp, $sp, 12
-	sw $ra, 8($sp)
-	# PROP = 4($sp)
-	sw $fp, 0($sp)
-
-	jal find_prop
-	move $t0, $v0
+print_code:
+	subu $sp, $sp, 8
+	sw $fp, 4($sp)
+	sw $a0, ($sp)
 
 	li $v0, 4 			# syscall stampa
 	la $a0, GUESS			# stampo messaggio di spampa del tentativo
 	syscall
-	
-	li $v0, 1			# syscall stampa numero
-	la $t1, 4($sp)		# t1 = &PROP[0]. in PROP salvo il tentativo
-	sw $t0, ($t1) 
-	li $t2, 3           # indice del ciclo
-guess_trv_loop:
-	add $t3, $t1, $t2       # calcolo la posizione nell'codice
-	lb $a0, ($t3)			# stampo la posizione i del codice
-	syscall 
-	addi $t2, $t2, -1
-	bgez $t2, guess_trv_loop
 
+	li $v0, 1
+	lb $a0, 3($sp)
+	syscall
+	lb $a0, 2($sp)
+	syscall
+	lb $a0, 1($sp)
+	syscall
+	lb $a0, 0($sp)
+	syscall
+	
 	li $v0, 11			# syscall stampa carattere
 	li $a0, '\n'			# stampo un acapo per chiarezza
 	syscall
 
+	lw $fp, 4($sp)
+	addi $sp, $sp, 8
+	jr $ra
+
+# aggiungere funzione per stampa codice
+guess:
+	subu $sp, $sp, 12
+	sw $ra, 8($sp)
+	sw $s0, 4($sp)
+	sw $fp, 0($sp)
+
+	jal find_prop
+	move $s0, $v0
+
+	move $a0, $s0
+	jal print_code
+
+	move $v0, $s0
+
 	lw $ra, 8($sp)
-	lw $v0, 4($sp)			# return del valore proposto
+	lw $s0, 4($sp)			# return del valore proposto
 	lw $fp, 0($sp)
 	addi $sp, $sp, 12
 	jr $ra
+
 
 print_win:
 	subu $sp, $sp, 4
