@@ -307,11 +307,11 @@ guess:
 	move $s0, $v0		# salvo i valori di return
 	move $s1, $v1
 	
-	move $a0, $s0		
+	move $a0, $s0		# preparo codice trovato per la stampa
 	jal print_code		# stampo il codice trovato
 
 	move $v0, $s0		# return del codice trovato
-	move $v1, $s1
+	move $v1, $s1		# return della posizione del codice
 
 	lw $s1, 12($sp)
 	lw $ra, 8($sp)		# ripristino i registri
@@ -320,7 +320,7 @@ guess:
 	addi $sp, $sp, 16	# ripristino lo stack
 	jr $ra			# return 
 
-# guess(posizione_codice_precedente ) ->
+# find_prop(posizione_codice_precedente ) ->
 #		v0 = codice proposto
 # 		v1 = indice del codice proposto
 #
@@ -404,81 +404,57 @@ R:
 	addi $sp, $sp, 12
 	jr $ra
 
-
-
-# print_code(code) -> () : stampa il codice 
+# print_code(code) -> ()
+#
+# stampa il codice passato come argomento 
 print_code:
-	subu $sp, $sp, 8
+	subu $sp, $sp, 8	# sposto testa stack e salvo fp
 	sw $fp, 4($sp)
-	sw $a0, ($sp)
+	sw $a0, ($sp)		# salvo a0 per poter accedere ai byte
 
-	li $v0, 4 			# syscall stampa
-	la $a0, GUESS			# stampo messaggio di spampa del tentativo
-	syscall
+	li $v0, 4 		# syscall stampa stringa
+	la $a0, GUESS		# carico indirizzo tringa del tentativo
+	syscall			# stampo
 
-	li $v0, 1
-	lb $a0, 3($sp)
-	syscall
-	lb $a0, 2($sp)
-	syscall
-	lb $a0, 1($sp)
-	syscall
-	lb $a0, 0($sp)
-	syscall
+	li $v0, 1		# syscall stampa intero
+	lb $a0, 3($sp)		# carico posizione 3
+	syscall			# stampo
+	lb $a0, 2($sp)          # carico posizione 2
+	syscall	                # stampo
+	lb $a0, 1($sp)          # carico posizione 1
+	syscall	                # stampo
+	lb $a0, 0($sp)          # carico posizione 0
+	syscall	                # stampo
 	
-	li $v0, 11			# syscall stampa carattere
-	li $a0, '\n'			# stampo un acapo per chiarezza
-	syscall
+	li $v0, 11		# syscall stampa carattere
+	li $a0, '\n'		# carico un acapo 
+	syscall			# stampo a capo per maggiore chiarezza in output
 
-	lw $fp, 4($sp)
-	addi $sp, $sp, 8
-	jr $ra
+	lw $fp, 4($sp)		# ripristino fp
+	addi $sp, $sp, 8	# rispritino stack
+	jr $ra			# return 
 
-
-
-
-print_intro:	
-	subu $sp, $sp, 4
-	sw $fp, ($sp)
-	li $v0, 4		# syscall per stampa stringa
-	la $a0, INTRO		# spama stringa di introduzione
-	syscall 		
-	lw $fp, ($sp)
-	addi $sp, $sp, 4
-	jr $ra
-
-print_win:
-	subu $sp, $sp, 4
-	sw $fp, ($sp)
-	li $v0, 4		# syscall per stampa stringa
-	la $a0, VITT		# spama stringa di introduzione
-	syscall 		
-	lw $fp, ($sp)
-	addi $sp, $sp, 4
-	jr $ra
-
-	
-
-
-
-
-
-
-	
+#################
+#               #
+# main () -> () #
+#               #                                    
+#################
 main:
-	jal print_intro 	# stampa le scritte iniziali
+	li $v0, 4		# syscall per stampa stringa
+	la $a0, INTRO		# carico stringa di benvenuto
+	syscall 		# stampo
 	jal create_permutations # crea tutti i possibili codici segreti
-	la $s1,COD
+	la $s1,COD		# il primo codice sarà la testa dell'array
+	li $s2, 4		# per vedere se sono state inserite 4 X
 main_loop:	
-	move $a0, $s1
+	move $a0, $s1		# carico indirizzo ultimo codice
 	jal guess 		# propone un codice segreto
 	move $s0,$v0		# salvo il codice proposto
-	move $s1, $v1
+	move $s1, $v1		# salvo indirizzo codice proposto
 
 	jal take_input		# leggo l'input. ritorna X e O
 
-	li $t1, 4		# mette in t1 4 per il confronto
-	beq $v0, $t1, win	# confronta t1 e t0 ( X == 4 ) e se la risposta e' vera ho vinto
+	beq $v0, $s2, win	# confronta v0 e s2 ( X == 4 ). se la risposta e' vera ho vinto
 
 	move $a0, $s0		# carico argomenti per filter
 	move $a1, $v0
@@ -486,6 +462,8 @@ main_loop:
 	jal filter		# filtra i codici eliminando quelli che non possono essere soluzione
 	j main_loop		# salta a main loop per fare un nuovo tentativo
 win:	
-	jal print_win 		# stampa il messaggio di vittoria
+	li $v0, 4		# syscall per stampa stringa
+	la $a0, VITT		# carico stringa di vittoria
+	syscall 		# stampo vittoria
 	li $v0, 10		# carico la syscall di chiusura
 	syscall			# chiude il programma
