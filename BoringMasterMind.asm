@@ -18,7 +18,6 @@ COD:    .space 16384 # 8 * 8 * 8 * 8 * 4byte
 # arg* = indirizzo di memoria in cui sono presenti i 3 argomenti per F #
 #                                                                      #
 ########################################################################
-
 map: 
         subu $sp, $sp, 24       # alloco spazio sullo stack e salvo i registri che andro' a modificare
         sw $ra, 4($sp)
@@ -83,22 +82,22 @@ filter:
 
 # compare_codes(INDEX, PROP, X , O)
 compare_codes:
-        subu $sp, $sp, 24
-        # 20 TMP_P
+        subu $sp, $sp, 24               # alloco spazio sullo stack e salvo i registri che andro' a modificare
+        # 20 TMP_P                      # alloco 2 word per salvare le copie dei codici  da modificare
         # 16 TMP_C
         sw $s2, 12($sp)
         sw $s1, 8($sp)
         sw $s0, 4($sp)
         sw $fp, 0($sp)
 
-        lw $t1, ($a0)   
-        li $t0, -1
+        lw $t1, ($a0)                   # carico il codice proposto
+        li $t0, -1                      # carico il valore nullo
         beq $t0, $t1, c_c_esci          # se sono in un codice gia' eliminato finisco subito senza fare altro
 
-        li $s0, 0                       # sono le X
-        sw $t1, 16($sp)                 # TMP_C = COD[i] : copio perche' devo lavorarci sopra
+        li $s0, 0                       # s0 rappresenta le X
+        sw $t1, 16($sp)                 # TMP_C = COD[i] : copio per lavorarci sopra
         
-        sw $a1, 20($sp)                 # sposto il codice proposto nello stack per lavorare sui byte
+        sw $a1, 20($sp)                 # TMP_P = PROP
 
         la $t0, 20($sp)                 # tengo in memoria la posizione di TMP_P
         la $t1, 16($sp)                 # tengo in memoria la posizioen di TMP_C
@@ -116,7 +115,7 @@ cc_loop_x:
 c_c_not_eq:
         addi $t0, $t0,1                 # prossima posizione di TMP_P
         addi $t1, $t1,1                 # prossima posizione di TMP_C
-        addi $s1, $s1, -1                       # decremento del ciclo
+        addi $s1, $s1, -1               # decremento del ciclo
         bgtz $s1, cc_loop_x             # se devo ancora controllare posizioni continuo nel ciclo
 
         beq $a2, $s0, c_c_controlla_O   # se il numero di X calcolate e quelle date coindide controlle le O altrimenti 
@@ -126,9 +125,9 @@ c_c_not_eq:
 
         #controllo sulle O
 c_c_controlla_O:        
-        li $s0, 0       # sono le O
-        la $t0, 16($sp) # mi tengo in memoria la posizione di TMP_C
-        li $s1, 4       # devo fare 4 giri sul codice
+        li $s0, 0                       # sono le O
+        la $t0, 16($sp)                 # mi tengo in memoria la posizione di TMP_C
+        li $s1, 4                       # devo fare 4 giri sul codice
 cc_loop_o:
         lb $t2, ($t0)                   # leggo la prima posizione del codice
         li $t3, -1                      
@@ -143,12 +142,12 @@ cc_loop_oo:
         sb $t3, ($t1)
         j cc_continue_o                 # e vado alla prossima posizione di TMP_C
 cc_continue_oo: 
-        addi $t1, $t1, 1                        # aumento posizione di TMP_P
-        addi $s2, $s2, -1                       # decremento loop interno
+        addi $t1, $t1, 1                # aumento posizione di TMP_P
+        addi $s2, $s2, -1               # decremento loop interno
         bgtz $s2, cc_loop_oo            # salto del loop interno
 cc_continue_o:  
-        addi $t0, $t0, 1                        # vado alla prossima posizione di TMP_C
-        addi $s1, $s1, -1                       # decremento loop
+        addi $t0, $t0, 1                # vado alla prossima posizione di TMP_C
+        addi $s1, $s1, -1               # decremento loop
         bgtz $s1, cc_loop_o             # salto del loop esterno
 
         beq $a3, $s0, c_c_esci          # confronto il numero delle O, se concisono esco
@@ -157,12 +156,12 @@ cc_continue_o:
         j c_c_esci                      # esci
         ### fine controllo sulle O
 c_c_esci:       
-        lw $s2, 12($sp)
+        lw $s2, 12($sp)                 # ripristino i registi
         lw $s1, 8($sp)
         lw $s0, 4($sp)
         lw $fp, 0($sp)
-        add $sp, $sp, 24
-        jr $ra
+        add $sp, $sp, 24                # ripristino lo stack
+        jr $ra                          # esco
 
 #####################################################################
 #                                                                   #
@@ -172,7 +171,6 @@ c_c_esci:
 # caricandoci il corrispondente codice segreto                      #
 #                                                                   #
 #####################################################################
-        
 create_permutations:
         subu $sp, $sp , 20      # alloco spazio sullo stack e salvo i registri che andro' a modificare
         sw $ra, 4($sp)
@@ -227,7 +225,6 @@ p_loop:
 # quante X e quante O erano contenute nel codice  #
 #                                                 #
 ###################################################
-
 take_input:
         subu $sp, $sp, 28       # alloco spazio sullo stack e salvo i registri che andro' a modificare
         sw $ra, 4($sp)          # salvo i registri
@@ -295,7 +292,6 @@ ri_noo:
 # della casualità della scelta della stringa da sottoporre #
 #                                                          #
 ############################################################
-        
 guess:
         subu $sp, $sp, 16       # sposto la testa dello stack e salvo i registri che saranno modificati
         sw $ra, 8($sp)
@@ -326,83 +322,82 @@ guess:
 #
 # Lavora su COD per trovare il codice 
 find_prop:
-        subu $sp, $sp, 8
+        subu $sp, $sp, 8        # sposto la testa dello stack e salvo i registri
         sw $ra, 4($sp)
         sw $fp, 0($sp)
 
-        la $t0, COD
-        subu $a1, $a0, $t0
-        li $a0, 5
-        jal RIC
+        la $t0, COD             # t0 = &COD
+        subu $a1, $a0, $t0      # a1 = &COD[poposto] - &COD = indice dell'indirizzo poposto
+        li $a0, 5               # faccio 5 chiamate ricorsive
+        jal RIC                 # chiamo la funzione ricorsiva per un po' di casualita' nella scelta
 
-        la $t0, COD                     # t0 = &COD[0]
-        li $t1, -1                      # t1 = -1 per vedere se i codici sono validi
-        li $t4, 16380
-        li $t7, 16384
+        la $t0, COD             # t0 = &COD[0]
+        li $t1, -1              # t1 = -1 per vedere se i codici sono validi
+        li $t4, 16380           # t4 e' per il ciclo
+        li $t7, 16384           # t7 e' per il modulo
 find_loop:      
-        add $t6, $t4, $v0               # calcolo lo shift
+        add $t6, $t4, $v0       # calcolo l'ffset dato da RIC
         div $t6, $t7
         mfhi $t6
-        add $t5, $t6, $t0
-        lb $t2, ($t5)                   # t2 = COD[a]
-        bne $t2, $t1, find      # se t2 (COD[a]) != -1 e' un codice valido
-        addi $t4, $t4, -4                       # incremento t0 per puntare alla posizione successiva di COD
-        
-        bgez $t4, find_loop             # se sono ancora nel vettore continuo nella ricerca altrimenti errore
+        add $t5, $t6, $t0       # calcolo la posizione da trattare
+        lb $t2, ($t5)           # t2 = COD[a]
+        bne $t2, $t1, find      # se t2 (COD[a]) != -1 e' un codice trovsato valido
+        addi $t4, $t4, -4       # decremento t4 per puntare alla posizione successiva di COD
+        bgez $t4, find_loop     # se non ho gia' visitato tutto COD continuo la ricarca, altrimenti errore
 
-        li $v0, 4                       # syscall stampa stringa
-        la $a0, ERRORE                  # stampa messaggio di errore
+        li $v0, 4               # syscall stampa stringa
+        la $a0, ERRORE          # stampa messaggio di errore
         syscall
-        li $v0, 10                      # uscita dal programma
+        li $v0, 10              # uscita dal programma
         syscall
 find:
-        lw $v0, ($t5)
-        move $v1, $t5
-        lw $fp, 0($sp)
+        lw $v0, ($t5)           # carico il valore da proporre
+        move $v1, $t5           # carica la posizione del valore da proporre
+        lw $fp, 0($sp)          # ripristino i registri
         lw $ra, 4($sp)
-        addi $sp, $sp, 8
-        jr $ra
+        addi $sp, $sp, 8        # ripristino lo stack
+        jr $ra                  # return
 
-F:
-        subu $sp, $sp, 4
-        sw $fp, ($sp)
-        addi $t0, $a0, -8192
-        blez $t0, SX
-        li $t0, 16384
-        sub $a0, $t0, $a0
-SX:
-        li $t0, 2
-        mul $v0, $a0, $t0
-        lw $fp, ($sp)
-        addi $sp, $sp, 4
-        jr $ra
-        
-
+# RIC(n,x) -> f^n(x) ricorsivamente
 RIC:
-        subu $sp, $sp, 12
+        subu $sp, $sp, 8        # sposto la testa dello stack e salvo i registri
         sw $fp, ($sp)
         sw $ra, 4($sp)
-        sw $s0, 8($sp)
         
-        bne $a0, $zero, R
-        move $a0, $a1
-        jal F
-        lw $fp, ($sp)
+        bne $a0, $zero, R       # se n e' zero calcolo f
+        move $a0, $a1           # preparo la chiamata a funzione
+        jal F                   # chiamata a f
+        lw $fp, ($sp)           # ripristino i registri
         lw $ra, 4($sp)
-        lw $s0, 8($sp)
-        addi $sp, $sp, 12
-        jr $ra
+        addi $sp, $sp, 8        # ripristino la testa dello stack
+        jr $ra                  # return
         
 R:      
-        addi $a0, $a0, -1
-        jal RIC
-        move $a0, $v0
-        jal F
-        lw $fp, ($sp)
-        lw $ra, 4($sp)
-        lw $s0, 8($sp)
-        addi $sp, $sp, 12
-        jr $ra
+        addi $a0, $a0, -1       # decremento n
+        jal RIC                 # chiamata ricorsiva
+        move $a0, $v0           # preparo f(f^(n-j))(x)
+        jal F                   # chiamo f
+        lw $fp, ($sp)           # ripristino i registri
+        lw $ra, 4($sp)          
+        addi $sp, $sp, 8        # ripristino lo stack
+        jr $ra                  # return
+
+# F(X) =
+#       2*X             se 0 <= X <= 8192
+#       2( 16384 - X )   altrimenti
+F:
+        subu $sp, $sp, 4        # sposto la testa rello stack
+        sw $fp, ($sp)
+        addi $t0, $a0, -8192    # prepato t0 per il controllo su X
+        blez $t0, SX            # controllo X, se X > 8192
+        li $t0, 16384           
+        sub $a0, $t0, $a0       # X = 16384 - X
+SX:
+        li $t0, 2               
+        mul $v0, $a0, $t0       # X = 2*X e lo metto come valore di ritorno
+        lw $fp, ($sp)           # ripristino i registri
+        addi $sp, $sp, 4        # ripristino lo stack
+        jr $ra                  # return 
 
 # print_code(code) -> ()
 #
