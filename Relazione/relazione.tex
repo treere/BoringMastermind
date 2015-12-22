@@ -1,0 +1,50 @@
+\documentclass{article}
+
+\title{Boring MasterMind}
+\author{Andrea Tomasi}
+
+\begin{document}
+\maketitle
+
+\section{Introduzione}
+Boring MasterMind implementa la variante del gioco del MasterMind in cui l'utente pensa il codice segreto e il calcolatore, basandosi sulle risposte date dal giocatore, prova ad indovinare la sequenza.
+
+\section{Algoritmo}
+L'algoritmo per indovinare la sequenza pernsata dall'utente crea un array con tutti i possibili codici e, ad ogni input, li filtra in modo da eliminare quelli che non possono essere corretti.
+
+L'algorimo prevede quindi tre fasi distinte:
+\begin{enumerate}
+\item creazione dell'array
+\item proposta di un codice
+\item filtraggio
+\end{enumerate}
+
+\subsection{Creazione}
+Dato che il codice segreto \`e composto da 4 numeri compresi tra 0 e 7 con ripetizioni e che ogni codice, per occupare il minimo spazio possibile senza rendere i codici di difficile lettura, pu\'o essere salvato in $4B$, saranno occupati $8^4*4B = 16KB$ di memoria.
+
+Per popolare l'array ho sfruttato la posizione in memoria dei codici. Considerando l'array come un array bidimensionale in cui il primo indice indica il codice e il secondo la cifra, ho scelto la seguente funzione: 
+  
+$$ARRAY[I][J] = \frac{I}{4*8^J}\ mod\ 8$$
+
+dove $0 \le I \le 16380$ e $ 0 \le J \le 3$. 
+
+\subsection{Proposta}
+La scelta del codice da proporre \'e legata a come annullare i codici non validi. Per identificarli ho scelto di utilizzare il valore $-1$. 
+
+Come primo passaggio genero un offset dipendente dall'ultimo codice proposto e poi a partire della posizione dell'offsetscorro l'array cercando il primo codice valido. Se l'array venisse scorso tutto senza trovare nessun codice valido significherebbe che l'utente ha inserito una risposta errata e quindi viene stampato un messaggio di errore.
+
+Per generare l'offset viene iterata 5 volte ricorsivamente la seguente funzione. In modo da sopstarmi quasi casualmente in un altro punto dell'array rimanendo certo di essere in una posizione coerente con la memoria.
+
+\subsection{Filtraggio}
+Per filtrare l'array si hanno a disposizione 3 dati: il numero di X e il numero di O inserite dall'utente e il codice che si era proposto. Si possono quindi eliminare tutti i codici dell'array che se fossero stati loro il codice segreto non mi avrebbero dato la stessa risposta fornita dall'utente.
+
+\section{Implementazione}
+\subsection{Struttura}
+Il main del programma \'e diviso in tre parti: la prima in cui viene stampato il messaggio di benvenuto e generato l'array; la seconda in cui viene proposto un codice, valutata la risposta e filtrato l'array; la terza in cui si da il messaggio di vittoria. 
+
+\subsection{Funzioni}
+Le uniche funzioni interessanti sono quella di generazione delle combinazioni e quella di filtraggio. Queste due infatti sono composte da tre parti di cui una \'e in comune. Vi \'e un corpo principale della funzione che chiama la funzione map che riceve tra gli argomenti la funzione da applicare all'array. La funzione di generazione e di filtraggio sono state quindi divise in due. Una parte comune che \'e lo scorrere tutto l'array e la parte propria che \èe la funzione da applicare agli elementi. 
+
+\subsection{Gestione della memoria}
+La memoria globale è utilizzata soltanto per salvare le scritte da stampare a schermo e l'array. Tutto il resto \'e messo sullo stack o passato come argomento e restituito come valore di ritorno.
+\end{document}
