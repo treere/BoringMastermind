@@ -1,4 +1,5 @@
 \documentclass{article}
+\usepackage{amsmath}
 
 \title{Boring MasterMind}
 \author{Andrea Tomasi}
@@ -10,7 +11,7 @@
 Boring MasterMind implementa la variante del gioco del MasterMind in cui l'utente pensa il codice segreto e il calcolatore, basandosi sulle risposte date dal giocatore, prova ad indovinare la sequenza.
 
 \section{Algoritmo}
-L'algoritmo per indovinare la sequenza pernsata dall'utente crea un array con tutti i possibili codici e, ad ogni input, li filtra in modo da eliminare quelli che non possono essere corretti.
+L'algoritmo, per indovinare la sequenza pensata dall'utente, crea un array con tutti i possibili codici e, ad ogni input, li filtra in modo da eliminare quelli che se fossero il codice segreto non darebbero la risposta data dall'utente.
 
 L'algorimo prevede quindi tre fasi distinte:
 \begin{enumerate}
@@ -31,9 +32,16 @@ dove $0 \le I \le 16380$ e $ 0 \le J \le 3$.
 \subsection{Proposta}
 La scelta del codice da proporre \'e legata a come annullare i codici non validi. Per identificarli ho scelto di utilizzare il valore $-1$. 
 
-Come primo passaggio genero un offset dipendente dall'ultimo codice proposto e poi a partire della posizione dell'offsetscorro l'array cercando il primo codice valido. Se l'array venisse scorso tutto senza trovare nessun codice valido significherebbe che l'utente ha inserito una risposta errata e quindi viene stampato un messaggio di errore.
+Come primo passaggio genero un offset dipendente dall'ultimo codice proposto e poi a partire della posizione dell'offset scorro l'array cercando il primo codice valido. Se l'array viene scorso tutto senza trovare nessun codice valido significa che l'utente ha inserito una risposta errata e quindi viene stampato un messaggio di errore.
 
-Per generare l'offset viene iterata 5 volte ricorsivamente la seguente funzione. In modo da sopstarmi quasi casualmente in un altro punto dell'array rimanendo certo di essere in una posizione coerente con la memoria.
+Per generare l'offset viene iterata 5 volte ricorsivamente la seguente funzione in modo da sostarmi quasi casualmente in un altro punto dell'array rimanendo certo di essere in una posizione coerente con la memoria.
+
+\[ f(x) =
+  \begin{cases}
+    2x       & \quad \text{se } 0 \le x \le 8192\\
+    2(16384 - x )  & \quad \text{altriment}\\
+  \end{cases}
+\] 
 
 \subsection{Filtraggio}
 Per filtrare l'array si hanno a disposizione 3 dati: il numero di X e il numero di O inserite dall'utente e il codice che si era proposto. Si possono quindi eliminare tutti i codici dell'array che se fossero stati loro il codice segreto non mi avrebbero dato la stessa risposta fornita dall'utente.
@@ -43,7 +51,7 @@ Per filtrare l'array si hanno a disposizione 3 dati: il numero di X e il numero 
 Il main del programma \'e diviso in tre parti: la prima in cui viene stampato il messaggio di benvenuto e generato l'array; la seconda in cui viene proposto un codice, valutata la risposta e filtrato l'array; la terza in cui si da il messaggio di vittoria. 
 
 \subsection{Funzioni}
-Le uniche funzioni interessanti sono quella di generazione delle combinazioni e quella di filtraggio. Queste due infatti sono composte da tre parti di cui una \'e in comune. Vi \'e un corpo principale della funzione che chiama la funzione map che riceve tra gli argomenti la funzione da applicare all'array. La funzione di generazione e di filtraggio sono state quindi divise in due. Una parte comune che \'e lo scorrere tutto l'array e la parte propria che \èe la funzione da applicare agli elementi. 
+Le uniche funzioni interessanti sono quella di generazione delle combinazioni e quella di filtraggio. Queste due infatti sono composte da tre parti di cui una \'e in comune. Queste funzioni infatti chiamano la funzione map che riceve tra gli argomenti la funzione da applicare all'array. La funzione di generazione e di filtraggio sono state quindi divise in due. Una parte comune che \'e lo scorrere tutto l'array e la parte propria che \'e la funzione da applicare agli elementi. 
 
 \subsection{Gestione della memoria}
 La memoria globale è utilizzata soltanto per salvare le scritte da stampare a schermo e l'array. Tutto il resto \'e messo sullo stack o passato come argomento e restituito come valore di ritorno.
